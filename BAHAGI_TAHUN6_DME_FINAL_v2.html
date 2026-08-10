@@ -1,0 +1,967 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🏰 数学逃脱密室 - 六年级除法特别版</title>
+    <style>
+        :root {
+            --bg-bright: linear-gradient(135deg, #162447 0%, #1f4068 100%);
+            --accent-red: #e43f5a;
+            --accent-gold: #ffcc00;
+            --accent-cyan: #00e5ff;
+            --text-light: #ffffff;
+        }
+
+        * { box-sizing: border-box; user-select: none; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--bg-bright);
+            color: var(--text-light);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 10px;
+        }
+
+        .app-container {
+            width: 100%;
+            max-width: 850px;
+            background: rgba(27, 27, 47, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 0 25px rgba(0, 229, 255, 0.3);
+            border: 3px solid var(--accent-cyan);
+            padding: 15px;
+        }
+
+        .shake { animation: shakeAnim 0.4s ease-in-out; }
+        @keyframes shakeAnim {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-10px); }
+            40%, 80% { transform: translateX(10px); }
+        }
+
+        .view-screen { display: none; flex-direction: column; gap: 12px; }
+        .view-screen.active { display: flex; }
+
+        .player-hud {
+            display: flex; justify-content: space-between; align-items: center;
+            background: var(--accent-red); padding: 8px 14px; border-radius: 12px;
+            border: 2px solid var(--accent-gold); font-size: 16px; font-weight: 900;
+        }
+
+        .level-bar {
+            display: flex; justify-content: space-between; align-items: center;
+            background: #0f4c75; padding: 6px 12px; border-radius: 10px;
+            border: 2px solid #fff; font-size: 14px; font-weight: bold;
+        }
+
+        .ai-speech-box {
+            display: flex; align-items: center; gap: 10px; background: #162447;
+            padding: 8px 12px; border-radius: 10px; border: 2px solid var(--accent-gold);
+            font-size: 14px; font-weight: bold;
+        }
+
+        .visual-workspace {
+            display: none; background: #0f1423; border-radius: 12px;
+            border: 2px solid var(--accent-cyan); padding: 15px;
+            flex-direction: column; align-items: flex-start; gap: 8px;
+            color: var(--accent-gold); font-size: 15px; line-height: 1.6;
+        }
+        .visual-workspace.active { display: flex; }
+
+        /* 黑板竖式 Step-by-Step 演练样式 */
+        .blackboard-style {
+            background: #122117 !important;
+            border: 3px dashed #81c784 !important;
+            color: #e8f5e9 !important;
+            font-family: 'Consolas', 'Courier New', monospace;
+        }
+        
+        .blackboard-title {
+            color: var(--accent-gold);
+            font-size: 16px;
+            font-weight: bold;
+            border-bottom: 1px solid #81c784;
+            padding-bottom: 6px;
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* 动态竖式展示容器 */
+        .vertical-step-box {
+            background: rgba(0,0,0,0.4);
+            border: 2px solid #81c784;
+            border-radius: 8px;
+            padding: 12px 16px;
+            font-family: 'Consolas', 'Courier New', monospace;
+            font-size: 20px;
+            line-height: 1.35;
+            letter-spacing: 2px;
+            color: #ffff8d;
+            margin: 8px 0;
+            white-space: pre;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.8);
+            animation: glowPulse 0.5s ease-in-out;
+        }
+
+        @keyframes glowPulse {
+            0% { border-color: var(--accent-cyan); box-shadow: 0 0 12px var(--accent-cyan); }
+            100% { border-color: #81c784; box-shadow: inset 0 0 10px rgba(0,0,0,0.8); }
+        }
+
+        .step-desc {
+            background: rgba(255, 204, 0, 0.15);
+            border-left: 4px solid var(--accent-gold);
+            padding: 6px 10px;
+            color: #ffffff;
+            font-size: 15px;
+            font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+            width: 100%;
+            margin-bottom: 5px;
+        }
+
+        .audio-btn {
+            background: var(--accent-gold); color: #000; border: none;
+            padding: 6px 12px; border-radius: 6px; font-weight: bold;
+            cursor: pointer; margin-top: 5px; display: inline-flex; align-items: center; gap: 5px;
+        }
+
+        .control-btn {
+            background: #2e7d32; color: #fff; border: 1px solid #a5d6a7;
+            padding: 4px 10px; border-radius: 4px; font-size: 13px; font-weight: bold;
+            cursor: pointer; transition: background 0.2s;
+        }
+        .control-btn:hover { background: #388e3c; }
+
+        .q-card { background: linear-gradient(180deg, #1f4068 0%, #162447 100%); border-radius: 12px; padding: 12px; text-align: center; border: 2px solid var(--accent-gold); }
+        .q-text { font-size: 26px; font-weight: 900; color: #fff; }
+
+        .options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .btn-opt {
+            background: linear-gradient(180deg, #00e5ff 0%, #0088ff 100%);
+            border: 2px solid #ffffff; color: #ffffff; font-size: 20px; font-weight: 900;
+            padding: 12px; border-radius: 10px; cursor: pointer; text-shadow: 1px 1px 0px #000;
+        }
+
+        .btn-action {
+            background: linear-gradient(180deg, #00e676 0%, #00a040 100%); color: white; border: 2px solid #ffffff;
+            padding: 12px; font-size: 18px; font-weight: 900; border-radius: 10px; cursor: pointer; width: 100%;
+        }
+
+        .report-card {
+            background: #ffffff; color: #000; border-radius: 12px; padding: 20px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.5); font-family: 'SimSun', 'Microsoft YaHei', sans-serif;
+        }
+        .report-header { text-align: center; border-bottom: 2px solid #333; padding-bottom: 10px; margin-bottom: 15px; }
+        .report-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; font-size: 15px; }
+        .report-table { width: 100%; border-collapse: collapse; margin-bottom: 15px; font-size: 14px; }
+        .report-table th, .report-table td { border: 1px solid #333; padding: 6px; text-align: center; }
+        .report-table th { background: #f0f0f0; }
+
+        @media print {
+            body { background: none; color: #000; }
+            .app-container { border: none; box-shadow: none; width: 100%; max-width: 100%; padding: 0; }
+            .no-print { display: none !important; }
+            .report-card { box-shadow: none; border: none; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="app-container" id="app-container">
+
+    <!-- 1. 登录界面 -->
+    <div id="screen-login" class="view-screen active">
+        <div style="text-align:center; margin-bottom: 10px;">
+            <h1 style="color:var(--accent-gold); font-size:28px;">🏰 数学逃脱密室</h1>
+            <p style="color:var(--accent-cyan); font-size:16px; font-weight:bold;">六年级除法大挑战 (竖式 Step-by-Step 逐笔演示版) ➗</p>
+        </div>
+        <div style="background:#1f4068; padding:15px; border-radius:12px; border:2px solid var(--accent-gold); display:flex; flex-direction:column; gap:10px;">
+            <div>
+                <label style="color:var(--accent-gold); font-size:14px; font-weight:bold;">👦 学生姓名：</label>
+                <input type="text" id="input-name" style="width:100%; padding:8px; margin-top:4px; border-radius:6px; border:none; font-size:16px; font-weight:bold;" value="林小明">
+            </div>
+            <div>
+                <label style="color:var(--accent-gold); font-size:14px; font-weight:bold;">🏫 学校与班级：</label>
+                <input type="text" id="input-class" style="width:100%; padding:8px; margin-top:4px; border-radius:6px; border:none; font-size:16px; font-weight:bold;" value="六年级 1班">
+            </div>
+        </div>
+        <button class="btn-action" onclick="startGame()">🚀 开始六年级除法大挑战</button>
+    </div>
+
+    <!-- 2. 游戏答题界面 -->
+    <div id="screen-game" class="view-screen">
+        <div class="player-hud">
+            <div>👤 <span id="hud-name">小明</span></div>
+            <div>🪙 得分: <span id="hud-coins" style="color:var(--accent-gold);">0</span></div>
+        </div>
+
+        <div class="level-bar">
+            <div>关卡进度：<span id="level-indicator">1/10</span></div>
+            <div id="ai-level-badge" style="color:var(--accent-cyan);">🟢 Level 1：独立挑战</div>
+        </div>
+
+        <div class="ai-speech-box">
+            <div style="font-size:22px;">👩‍🏫</div>
+            <div id="ai-speech">认真审题，注意除法运算中的单位换算与小数点移动法则！</div>
+        </div>
+
+        <div class="visual-workspace" id="visual-workspace"></div>
+
+        <div class="q-card">
+            <div class="q-text" id="q-text">1.5 百万 ÷ 6 = ?</div>
+        </div>
+
+        <div class="options-grid" id="options-grid"></div>
+    </div>
+
+    <!-- 3. 成绩报告单界面 -->
+    <div id="screen-report" class="view-screen">
+        <div class="report-card" id="report-card">
+            <div class="report-header">
+                <h2>🎓 小学六年级《除法应用与拓展》诊断报告单</h2>
+            </div>
+            <div class="report-grid">
+                <div><b>学生姓名：</b> <span id="rep-name">--</span></div>
+                <div><b>班级学校：</b> <span id="rep-class">--</span></div>
+                <div><b>测试时间：</b> <span id="rep-date">--</span></div>
+                <div><b>答题用时：</b> <span id="rep-time">--</span></div>
+                <div><b>最终得分：</b> <span id="rep-score" style="color:red; font-weight:bold;">--</span> 分</div>
+                <div><b>首次独立正确率：</b> <span id="rep-accuracy">--</span></div>
+            </div>
+
+            <table class="report-table">
+                <thead>
+                    <tr>
+                        <th>题号</th>
+                        <th>题目</th>
+                        <th>标准答案</th>
+                        <th>第一次尝试</th>
+                        <th>获得辅助</th>
+                    </tr>
+                </thead>
+                <tbody id="rep-table-body">
+                </tbody>
+            </table>
+
+            <div style="margin-top: 10px; font-size: 13px; color: #555;">
+                <b>教师评价/建议：</b> <span id="rep-comment">表现优秀！对六年级除法概念掌握熟练。</span>
+            </div>
+        </div>
+
+        <div style="display:flex; gap:10px; margin-top:10px;" class="no-print">
+            <button class="btn-action" style="background:#0088ff;" onclick="window.print()">🖨️ 打印 / 导出PDF报告</button>
+            <button class="btn-action" style="background:#e43f5a;" onclick="location.reload()">🔄 重新挑战</button>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    class SoundEngine {
+        constructor() { this.ctx = null; }
+        init() { if(!this.ctx) this.ctx = new (window.AudioContext || window.webkitAudioContext)(); }
+        playDing() {
+            this.init();
+            const osc = this.ctx.createOscillator(), gain = this.ctx.createGain();
+            osc.type = 'sine'; osc.frequency.setValueAtTime(523.25, this.ctx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(1046.50, this.ctx.currentTime + 0.3);
+            gain.gain.setValueAtTime(0.3, this.ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.3);
+            osc.connect(gain); gain.connect(this.ctx.destination);
+            osc.start(); osc.stop(this.ctx.currentTime + 0.3);
+        }
+        playBuzz() {
+            this.init();
+            const osc = this.ctx.createOscillator(), gain = this.ctx.createGain();
+            osc.type = 'sawtooth'; osc.frequency.setValueAtTime(160, this.ctx.currentTime);
+            gain.gain.setValueAtTime(0.3, this.ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.3);
+            osc.connect(gain); gain.connect(this.ctx.destination);
+            osc.start(); osc.stop(this.ctx.currentTime + 0.3);
+        }
+    }
+    const soundAudio = new SoundEngine();
+
+    function speakText(text) {
+        if ('speechSynthesis' in window) {
+            window.speechSynthesis.cancel();
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'zh-CN';
+            utterance.rate = 0.88;
+            window.speechSynthesis.speak(utterance);
+        }
+    }
+
+    // 真正做到 Step-by-Step 逐行渲染竖式的核心数据结构
+    const divQuestions = [
+        { 
+            q: "1.5 百万 ÷ 6 = ?", 
+            ans: "250 000", 
+            opts: ["250 000", "25 000", "0.25 百万", "150 000"], 
+            stepsHtml: "📌 <b>AI 老师引导步骤：</b><br>1️⃣ 第一步：把 1.5 百万化为完整整数 1 500 000。<br>2️⃣ 第二步：用 1 500 000 除以 6。<br>👉 提示：先算 15 ÷ 6，再补齐后面的 0！",
+            speechText: "别担心，我们一步步来。第一步，把一点五百万化成完整整数是一百五十万。第二步，用一百五十万除以六。你可以先算十五除以六，再补上后面的零哦！",
+            boardSpeech: "仔细看黑板上的竖式分步推演：1.5百万等于150万。15除以6商2余3，把0落下来变成30；30除以6商5整除，最后把末尾四个0补上，答案是25万！",
+            verticalSteps: [
+                {
+                    desc: "Step 1: 准备竖式，1.5 百万 = 1 500 000",
+                    art: `         
+   --------------
+ 6 ) 1 5 0 0 0 0 0`
+                },
+                {
+                    desc: "Step 2: 看前两位 15 ÷ 6，商写 2 (二六十二)",
+                    art: `       2 
+   --------------
+ 6 ) 1 5 0 0 0 0 0
+     1 2
+    -----`
+                },
+                {
+                    desc: "Step 3: 相减余 3，把下一个数字 0 落下，组成 30",
+                    art: `       2 
+   --------------
+ 6 ) 1 5 0 0 0 0 0
+     1 2
+    -----
+       3 0`
+                },
+                {
+                    desc: "Step 4: 30 ÷ 6 = 5，商写 5，正好整除",
+                    art: `       2 5
+   --------------
+ 6 ) 1 5 0 0 0 0 0
+     1 2
+    -----
+       3 0
+       3 0
+      -----
+         0`
+                },
+                {
+                    desc: "Step 5: 将被除数末尾剩余的 4 个 0 依次补在商的后面",
+                    art: `       2 5 0 0 0 0
+   --------------
+ 6 ) 1 5 0 0 0 0 0
+     1 2
+    -----
+       3 0
+       3 0
+      -----
+         0  (末尾补零 ➔ 250,000)`
+                }
+            ]
+        },
+        { 
+            q: "3.75 ÷ 1.5 = ?", 
+            ans: "2.5", 
+            opts: ["2.5", "0.25", "25", "2.25"], 
+            stepsHtml: "📌 <b>AI 老师引导步骤：</b><br>1️⃣ 第一步：除数 1.5 有一位小数，两边同时乘以 10。<br>2️⃣ 第二步：原式变成 37.5 ÷ 15。",
+            speechText: "除数一点五有一位小数，先把被除数和除数同时乘以十，算式变成三十七点五除以十五。",
+            boardSpeech: "看黑板上的小数竖式推断：同时扩大十倍后变为37.5除以15。37除以15商2余7；点上小数点后将5落下成75；75除以15商5整除，答案是2.5！",
+            verticalSteps: [
+                {
+                    desc: "Step 1: 两边同乘 10 消去除数小数 ➔ 37.5 ÷ 15",
+                    art: `
+   -----------
+15 ) 3 7 . 5`
+                },
+                {
+                    desc: "Step 2: 37 ÷ 15 商 2，15 × 2 = 30",
+                    art: `        2
+   -----------
+15 ) 3 7 . 5
+     3 0
+    -----`
+                },
+                {
+                    desc: "Step 3: 37 - 30 = 7，对齐点上小数点，把 5 落下来",
+                    art: `        2 .
+   -----------
+15 ) 3 7 . 5
+     3 0
+    -----
+       7 . 5`
+                },
+                {
+                    desc: "Step 4: 75 ÷ 15 = 5，商写 5，整除完成！",
+                    art: `        2 . 5
+   -----------
+15 ) 3 7 . 5
+     3 0
+    -----
+       7 . 5
+       7   5
+      -------
+           0  (结果 ➔ 2.5)`
+                }
+            ]
+        },
+        { 
+            q: "¾ 百万 ÷ 3 = ?", 
+            ans: "250 000", 
+            opts: ["250 000", "500 000", "750 000", "125 000"], 
+            stepsHtml: "📌 <b>AI 老师引导步骤：</b><br>1️⃣ 第一步：¾ 百万 = 0.75 百万 = 750 000。<br>2️⃣ 第二步：750 000 ÷ 3。",
+            speechText: "四分之三百万就是七十五万，然后再把七十五万除以三！",
+            boardSpeech: "四分之三百万等于七十五万。7除以3商2余1，落5成15；15除以3商5整除，补齐零得出25万。",
+            verticalSteps: [
+                {
+                    desc: "Step 1: ¾ 百万 = 750 000，列出竖式",
+                    art: `
+   --------------
+ 3 ) 7 5 0 0 0 0`
+                },
+                {
+                    desc: "Step 2: 7 ÷ 3 = 2 余 1，商写 2",
+                    art: `       2
+   --------------
+ 3 ) 7 5 0 0 0 0
+     6
+    ---
+     1`
+                },
+                {
+                    desc: "Step 3: 落 5 组成 15，15 ÷ 3 = 5",
+                    art: `       2 5
+   --------------
+ 3 ) 7 5 0 0 0 0
+     6
+    ---
+     1 5
+     1 5
+    -----
+       0`
+                },
+                {
+                    desc: "Step 4: 补齐末尾 4 个 0",
+                    art: `       2 5 0 0 0 0
+   --------------
+ 3 ) 7 5 0 0 0 0
+     6
+    ---
+     1 5
+     1 5
+    -----
+       0  (结果 ➔ 250,000)`
+                }
+            ]
+        },
+        { 
+            q: "184.5 ÷ 100 = ?", 
+            ans: "1.845", 
+            opts: ["1.845", "18.45", "0.1845", "1845"], 
+            stepsHtml: "📌 <b>AI 老师引导步骤：</b><br>除以 100 时，直接把 184.5 的小数点向<b>左</b>移动 2 位。",
+            speechText: "除以一百，直接把小数点向左移动两位。",
+            boardSpeech: "看黑板上的位移图：除以100，小数点向左跳动两位，最终变成1.845。",
+            verticalSteps: [
+                {
+                    desc: "Step 1: 准备移动小数点，初始状态：",
+                    art: `  1 8 4 . 5`
+                },
+                {
+                    desc: "Step 2: 除以 10 (向左移 1 位)",
+                    art: `   1 8 . 4 5`
+                },
+                {
+                    desc: "Step 3: 除以 100 (向左移 2 位)",
+                    art: `    1 . 8 4 5  👈 (最终结果)`
+                }
+            ]
+        },
+        { 
+            q: "2.4 百万 ÷ 8 = ?", 
+            ans: "300 000", 
+            opts: ["300 000", "30 000", "0.3 百万", "3 000 000"], 
+            stepsHtml: "📌 <b>AI 老师引导步骤：</b><br>2.4 百万 = 2 400 000，利用口诀：24 ÷ 8 = 3！",
+            speechText: "二点四百万等于二百四十万，三八二十四！",
+            boardSpeech: "二百四十万除以八，前两位24除以8商3，补齐零得30万。",
+            verticalSteps: [
+                {
+                    desc: "Step 1: 2.4 百万 = 2 400 000",
+                    art: `
+   --------------
+ 8 ) 2 4 0 0 0 0 0`
+                },
+                {
+                    desc: "Step 2: 24 ÷ 8 = 3，三八二十四",
+                    art: `       3
+   --------------
+ 8 ) 2 4 0 0 0 0 0
+     2 4
+    -----
+       0`
+                },
+                {
+                    desc: "Step 3: 补齐剩下的 5 个 0",
+                    art: `       3 0 0 0 0 0
+   --------------
+ 8 ) 2 4 0 0 0 0 0
+     2 4
+    -----
+       0  (结果 ➔ 300,000)`
+                }
+            ]
+        },
+        { 
+            q: "1.677 百万 ÷ 86% = ?", 
+            ans: "1.95 百万", 
+            opts: ["1.95 百万", "19.5 百万", "0.195 百万", "1.577 百万"], 
+            stepsHtml: "📌 <b>AI 老师引导步骤：</b><br>86% = 0.86，算式转化为 167.7 ÷ 86！",
+            speechText: "把百分之八十六化成零点八六，扩大一百倍后计算一百六十七点七除以八十六。",
+            boardSpeech: "看这个较复杂的小数竖式：167除以86商1余81；落7商9得774；余43补零商5，答案是1.95百万。",
+            verticalSteps: [
+                {
+                    desc: "Step 1: 86% = 0.86 ➔ 化简为 167.7 ÷ 86",
+                    art: `
+   -------------
+86 ) 1 6 7 . 7`
+                },
+                {
+                    desc: "Step 2: 167 ÷ 86 商 1 余 81",
+                    art: `       1
+   -------------
+86 ) 1 6 7 . 7
+       8 6
+    ---------
+       8 1`
+                },
+                {
+                    desc: "Step 3: 点小数点，落 7，817 ÷ 86 商 9",
+                    art: `       1 . 9
+   -------------
+86 ) 1 6 7 . 7
+       8 6
+    ---------
+       8 1   7
+       7 7   4
+      ---------
+         4   3`
+                },
+                {
+                    desc: "Step 4: 补 0 得 430，430 ÷ 86 = 5 整除",
+                    art: `       1 . 9 5
+   -------------
+86 ) 1 6 7 . 7
+       8 6
+    ---------
+       8 1   7
+       7 7   4
+      ---------
+         4   3 0
+         4   3 0
+        ---------
+               0  (结果 ➔ 1.95 百万)`
+                }
+            ]
+        },
+        { 
+            q: "1½ 百万 ÷ 5 = ?", 
+            ans: "300 000", 
+            opts: ["300 000", "250 000", "150 000", "0.3 百万"], 
+            stepsHtml: "📌 <b>AI 老师引导步骤：</b><br>1½ 百万 = 1.5 百万 = 1 500 000。用 15 ÷ 5！",
+            speechText: "一点五百万等于一百五十万，十五除以五得三！",
+            boardSpeech: "一百五十万除以五，15除以5商3，补齐五个零得30万。",
+            verticalSteps: [
+                {
+                    desc: "Step 1: 1½ 百万 = 1 500 000",
+                    art: `
+   --------------
+ 5 ) 1 5 0 0 0 0 0`
+                },
+                {
+                    desc: "Step 2: 15 ÷ 5 = 3",
+                    art: `       3
+   --------------
+ 5 ) 1 5 0 0 0 0 0
+     1 5
+    -----
+       0`
+                },
+                {
+                    desc: "Step 3: 补齐末尾 5 个 0",
+                    art: `       3 0 0 0 0 0
+   --------------
+ 5 ) 1 5 0 0 0 0 0
+     1 5
+    -----
+       0  (结果 ➔ 300,000)`
+                }
+            ]
+        },
+        { 
+            q: "0.21 ÷ 0.15 = ?", 
+            ans: "1.4", 
+            opts: ["1.4", "0.14", "14", "1.05"], 
+            stepsHtml: "📌 <b>AI 老师引导步骤：</b><br>同时乘以 100 变成 21 ÷ 15。",
+            speechText: "两边同时乘以一百，计算二十一除以十五。",
+            boardSpeech: "21除以15商1余6；点小数点补零成60，60除以15商4整除，答案1.4。",
+            verticalSteps: [
+                {
+                    desc: "Step 1: 扩大 100 倍 ➔ 21 ÷ 15",
+                    art: `
+   -----------
+15 ) 2 1 . 0`
+                },
+                {
+                    desc: "Step 2: 21 ÷ 15 商 1 余 6",
+                    art: `        1
+   -----------
+15 ) 2 1 . 0
+     1 5
+    -----
+       6`
+                },
+                {
+                    desc: "Step 3: 点小数点，落 0，60 ÷ 15 = 4",
+                    art: `        1 . 4
+   -----------
+15 ) 2 1 . 0
+     1 5
+    -----
+       6 . 0
+       6   0
+      -------
+           0  (结果 ➔ 1.4)`
+                }
+            ]
+        },
+        { 
+            q: "4.2 百万 ÷ 7 = ?", 
+            ans: "600 000", 
+            opts: ["600 000", "60 000", "700 000", "420 000"], 
+            stepsHtml: "📌 <b>AI 老师引导步骤：</b><br>1️⃣ 4.2 百万 = 4 200 000。<br>2️⃣ 先算 42 ÷ 7 = 6。<br>3️⃣ 再根据 4.2 百万补回 5 个 0，得到 600 000。",
+            speechText: "四点二百万等于四百二十万。先算四十二除以七等于六，再补回五个零，答案是六十万。",
+            boardSpeech: "看黑板上的竖式：四百二十万除以七。42除以7商6，正好整除，再把后面的五个零补到商的后面，答案是60万。",
+            verticalSteps: [
+                {
+                    desc: "Step 1: 4.2 百万 = 4 200 000",
+                    art: `
+       6 0 0 0 0 0
+   ----------------
+ 7 ) 4 2 0 0 0 0 0`
+                },
+                {
+                    desc: "Step 2: 42 ÷ 7 = 6，商写 6",
+                    art: `       6
+   ----------------
+ 7 ) 4 2 0 0 0 0 0
+     4 2
+    -----
+       0`
+                },
+                {
+                    desc: "Step 3: 被除数后面的 5 个 0 依次写入商",
+                    art: `       6 0 0 0 0 0
+   ----------------
+ 7 ) 4 2 0 0 0 0 0
+     4 2
+    -----
+       0
+       ↓ ↓ ↓ ↓ ↓
+      补入 5 个 0`
+                },
+                {
+                    desc: "Step 4: 最终答案 = 600 000",
+                    art: `       6 0 0 0 0 0
+   ----------------
+ 7 ) 4 2 0 0 0 0 0
+     4 2
+    -----
+       0  (结果 ➔ 600,000)`
+                }
+            ]
+        },
+        { 
+            q: "56 ÷ 1000 = ?", 
+            ans: "0.056", 
+            opts: ["0.056", "0.56", "5.6", "0.0056"], 
+            stepsHtml: "📌 <b>AI 老师引导步骤：</b><br>除以 1000，小数点向<b>左</b>移动 3 位。位数不够时，在前面补 0。",
+            speechText: "五十六除以一千，小数点向左移动三位。先移动两位得到零点五六，再移动一位并在前面补零，得到零点零五六。",
+            boardSpeech: "看小数点移动：56除以1000，小数点向左移动三位。移动一位是5.6，移动两位是0.56，移动三位是0.056，所以答案是0.056。",
+            verticalSteps: [
+                {
+                    desc: "Step 1: 写出 56 的小数点位置",
+                    art: `  5 6 . 0`
+                },
+                {
+                    desc: "Step 2: 除以 10，小数点向左移动 1 位",
+                    art: `  5 . 6`
+                },
+                {
+                    desc: "Step 3: 除以 100，小数点向左移动 2 位",
+                    art: `  0 . 5 6`
+                },
+                {
+                    desc: "Step 4: 除以 1000，小数点向左移动 3 位",
+                    art: `  0 . 0 5 6  👈 (最终答案)`
+                }
+            ]
+        }
+    ];
+
+    let currentQIndex = 0;
+    let playerData = { name: '', classInfo: '', score: 0 };
+    let currentAiLevel = 1; 
+    let startTime = null;
+    let studentLogs = [];
+    
+    // 竖式 Step-by-Step 控制变量
+    let currentStepIndex = 0;
+    let autoStepTimer = null;
+
+    function startGame() {
+        playerData.name = document.getElementById('input-name').value || "无名";
+        playerData.classInfo = document.getElementById('input-class').value || "未填写";
+        document.getElementById('hud-name').innerText = playerData.name;
+        startTime = new Date();
+        studentLogs = [];
+        showScreen('screen-game');
+        loadQuestion();
+    }
+
+    function showScreen(id) {
+        document.querySelectorAll('.view-screen').forEach(s => s.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
+    }
+
+    function loadQuestion() {
+        currentAiLevel = 1;
+        stopAutoStep();
+        if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+        const q = divQuestions[currentQIndex];
+        document.getElementById('level-indicator').innerText = `${currentQIndex + 1}/${divQuestions.length}`;
+        document.getElementById('q-text').innerText = `${currentQIndex + 1}. ${q.q}`;
+        renderOptions(q.opts, q.ans);
+        updateAiUI();
+    }
+
+    function renderOptions(opts, correct) {
+        const grid = document.getElementById('options-grid');
+        grid.innerHTML = '';
+        const shuffled = [...opts].sort(() => Math.random() - 0.5);
+        shuffled.forEach((opt, i) => {
+            const btn = document.createElement('button');
+            btn.className = 'btn-opt';
+            btn.innerText = `${String.fromCharCode(65 + i)}. ${opt}`;
+            btn.onclick = () => handleAnswer(opt === correct, opt);
+            grid.appendChild(btn);
+        });
+    }
+
+    function handleAnswer(isCorrect, selectedOpt) {
+        if (!studentLogs[currentQIndex]) {
+            studentLogs[currentQIndex] = {
+                qIndex: currentQIndex + 1,
+                question: divQuestions[currentQIndex].q,
+                correctAns: divQuestions[currentQIndex].ans,
+                firstTry: selectedOpt,
+                isFirstTryCorrect: isCorrect,
+                neededHelper: '🟢 独立完成'
+            };
+        }
+
+        if (isCorrect) {
+            soundAudio.playDing();
+            stopAutoStep();
+            if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+            
+            let addScore = 10;
+            if(currentAiLevel === 2) addScore = 7;
+            if(currentAiLevel === 3) addScore = 4;
+
+            playerData.score += addScore;
+            document.getElementById('hud-coins').innerText = playerData.score;
+            
+            currentQIndex++;
+            if (currentQIndex < divQuestions.length) {
+                loadQuestion();
+            } else {
+                finishGame();
+            }
+        } else {
+            soundAudio.playBuzz();
+            
+            if (currentAiLevel === 1) {
+                currentAiLevel = 2;
+                studentLogs[currentQIndex].neededHelper = '🟡 语音引导';
+            } else if (currentAiLevel === 2) {
+                currentAiLevel = 3;
+                studentLogs[currentQIndex].neededHelper = '🔴 竖式逐笔演练';
+            }
+
+            document.getElementById('app-container').classList.add('shake');
+            setTimeout(() => document.getElementById('app-container').classList.remove('shake'), 400);
+            updateAiUI();
+        }
+    }
+
+    function updateAiUI() {
+        const badge = document.getElementById('ai-level-badge');
+        const speech = document.getElementById('ai-speech');
+        const workspace = document.getElementById('visual-workspace');
+        const currentQ = divQuestions[currentQIndex];
+
+        stopAutoStep();
+        workspace.classList.remove('blackboard-style');
+
+        if (currentAiLevel === 1) {
+            badge.innerText = `🟢 Level 1：独立挑战`;
+            speech.innerText = "仔细计算，选择正确答案！";
+            workspace.classList.remove('active');
+        } 
+        else if (currentAiLevel === 2) {
+            badge.innerText = `🟡 Level 2：AI 老师分步思路引导`;
+            speech.innerText = "请听 AI 老师的解题思路引导，重新尝试回答！";
+            workspace.classList.add('active');
+            
+            workspace.innerHTML = `
+                <div>${currentQ.stepsHtml}</div>
+                <button class="audio-btn" onclick="speakText(divQuestions[currentQIndex].speechText)">🔊 再次播放 AI 老师语音引导</button>
+            `;
+
+            speakText(currentQ.speechText);
+        }
+        else if (currentAiLevel === 3) {
+            badge.innerText = `🔴 Level 3：竖式 Step-by-Step 逐笔推导`;
+            speech.innerText = "仔细观察黑板上竖式一步步写出的过程！";
+            workspace.classList.add('active', 'blackboard-style');
+
+            initStepByStepBoard(currentQ);
+        }
+    }
+
+    // ⚡ 初始化 Step-by-Step 动态黑板
+    function initStepByStepBoard(q) {
+        const workspace = document.getElementById('visual-workspace');
+        currentStepIndex = 0;
+
+        workspace.innerHTML = `
+            <div class="blackboard-title">
+                <span>📋 竖式 Step-by-Step 逐笔黑板演练</span>
+                <div style="display:flex; gap:6px;">
+                    <button class="control-btn" onclick="prevStep()">◀️ 上一步</button>
+                    <button class="control-btn" onclick="nextStep()">▶️ 下一步</button>
+                    <button class="control-btn" style="background:#0288d1;" onclick="replaySteps()">⏯️ 重播</button>
+                </div>
+            </div>
+            
+            <div id="step-desc-display" class="step-desc">--</div>
+            
+            <div id="vertical-art-display" class="vertical-step-box">--</div>
+
+            <button class="audio-btn" style="background:#81c784; color:#000;" onclick="speakText(divQuestions[currentQIndex].boardSpeech)">🔊 再次播放语音讲解</button>
+        `;
+
+        renderCurrentStep(q);
+        speakText(q.boardSpeech);
+
+        // 自动播放 Timer (每 1.3 秒推进一步竖式)
+        autoStepTimer = setInterval(() => {
+            if (currentStepIndex < q.verticalSteps.length - 1) {
+                currentStepIndex++;
+                renderCurrentStep(q);
+            } else {
+                stopAutoStep();
+            }
+        }, 1300);
+    }
+
+    function renderCurrentStep(q) {
+        const stepData = q.verticalSteps[currentStepIndex];
+        if (!stepData) return;
+
+        document.getElementById('step-desc-display').innerText = `[${currentStepIndex + 1}/${q.verticalSteps.length}] ${stepData.desc}`;
+        
+        const artBox = document.getElementById('vertical-art-display');
+        artBox.innerText = stepData.art;
+        
+        // 触发 CSS 闪烁动画重置
+        artBox.style.animation = 'none';
+        artBox.offsetHeight; 
+        artBox.style.animation = null; 
+    }
+
+    function nextStep() {
+        stopAutoStep();
+        const q = divQuestions[currentQIndex];
+        if (currentStepIndex < q.verticalSteps.length - 1) {
+            currentStepIndex++;
+            renderCurrentStep(q);
+        }
+    }
+
+    function prevStep() {
+        stopAutoStep();
+        const q = divQuestions[currentQIndex];
+        if (currentStepIndex > 0) {
+            currentStepIndex--;
+            renderCurrentStep(q);
+        }
+    }
+
+    function replaySteps() {
+        stopAutoStep();
+        const q = divQuestions[currentQIndex];
+        currentStepIndex = 0;
+        renderCurrentStep(q);
+
+        autoStepTimer = setInterval(() => {
+            if (currentStepIndex < q.verticalSteps.length - 1) {
+                currentStepIndex++;
+                renderCurrentStep(q);
+            } else {
+                stopAutoStep();
+            }
+        }, 1300);
+    }
+
+    function stopAutoStep() {
+        if (autoStepTimer) {
+            clearInterval(autoStepTimer);
+            autoStepTimer = null;
+        }
+    }
+
+    function finishGame() {
+        stopAutoStep();
+        if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+        const endTime = new Date();
+        const durationSec = Math.round((endTime - startTime) / 1000);
+        const firstTryCorrectCount = studentLogs.filter(l => l && l.isFirstTryCorrect).length;
+        const accuracy = Math.round((firstTryCorrectCount / divQuestions.length) * 100);
+
+        document.getElementById('rep-name').innerText = playerData.name;
+        document.getElementById('rep-class').innerText = playerData.classInfo;
+        document.getElementById('rep-date').innerText = endTime.toLocaleDateString() + " " + endTime.toLocaleTimeString();
+        document.getElementById('rep-time').innerText = `${Math.floor(durationSec / 60)}分${durationSec % 60}秒`;
+        document.getElementById('rep-score').innerText = playerData.score;
+        document.getElementById('rep-accuracy').innerText = `${accuracy}% (${firstTryCorrectCount}/${divQuestions.length})`;
+
+        let comment = "表现完美！除法概念清晰，能看懂竖式细节并矫正错误！";
+        if (accuracy < 60) comment = "基础尚需巩固，建议重复观看竖式 Step-by-Step 推导动画！";
+        else if (accuracy < 90) comment = "表现良好！在观看竖式推演后能快速理解，继续保持！";
+        document.getElementById('rep-comment').innerText = comment;
+
+        let tableHtml = '';
+        studentLogs.forEach(log => {
+            if(!log) return;
+            tableHtml += `<tr>
+                <td>${log.qIndex}</td>
+                <td>${log.question}</td>
+                <td>${log.correctAns}</td>
+                <td style="color:${log.isFirstTryCorrect ? 'green' : 'red'}; font-weight:bold;">${log.firstTry}</td>
+                <td>${log.neededHelper}</td>
+            </tr>`;
+        });
+        document.getElementById('rep-table-body').innerHTML = tableHtml;
+
+        showScreen('screen-report');
+    }
+</script>
+</body>
+</html>

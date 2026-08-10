@@ -1,0 +1,786 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🏰 六年级数学逃脱密室 - 七位数加法大挑战</title>
+    <style>
+        :root {
+            --bg-bright: linear-gradient(135deg, #1b0238 0%, #4a6fa5 100%);
+            --card-main: #3d1c73;
+            --accent-yellow: #ffea00;
+            --accent-green: #00ff66;
+            --accent-cyan: #00f0ff;
+            --accent-pink: #ff2a8d;
+            --text-light: #ffffff;
+        }
+
+        * { box-sizing: border-box; user-select: none; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Comic Sans MS', 'Segoe UI', sans-serif;
+            background: var(--bg-bright);
+            color: var(--text-light);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 15px;
+        }
+
+        .app-container {
+            width: 100%;
+            max-width: 1020px;
+            background: rgba(30, 10, 65, 0.95);
+            border-radius: 32px;
+            box-shadow: 0 0 35px rgba(0, 240, 255, 0.5), inset 0 0 15px rgba(255, 255, 255, 0.2);
+            border: 5px solid var(--accent-cyan);
+            overflow: hidden;
+            position: relative;
+            min-height: 740px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .shake { animation: shakeAnim 0.4s ease-in-out; }
+        @keyframes shakeAnim {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-12px); }
+            40%, 80% { transform: translateX(12px); }
+        }
+
+        .view-screen {
+            display: none;
+            padding: 25px;
+            flex: 1;
+            flex-direction: column;
+            justify-content: space-between;
+            animation: fadeIn 0.25s ease-out;
+        }
+        .view-screen.active { display: flex; }
+        @keyframes fadeIn { from { opacity: 0; transform: scale(0.97); } to { opacity: 1; transform: scale(1); } }
+
+        /* 顶部 HUD */
+        .player-hud {
+            display: flex; justify-content: space-between; align-items: center;
+            background: #ff0055; padding: 12px 24px; border-radius: 20px;
+            border: 3px solid var(--accent-yellow); font-size: 22px; font-weight: 900;
+            box-shadow: 0 6px 0 #990033; text-shadow: 1px 1px 2px #000;
+        }
+
+        .level-indicator-bar {
+            display: flex; justify-content: space-between; align-items: center;
+            background: #0088ff; padding: 10px 20px; border-radius: 16px; margin: 15px 0;
+            border: 3px solid #ffffff; font-size: 20px; font-weight: bold;
+            box-shadow: 0 4px 0 #0055aa;
+        }
+
+        .ai-level-badge {
+            padding: 6px 18px; border-radius: 30px; font-weight: 900; font-size: 18px;
+            display: inline-flex; align-items: center; gap: 6px; text-shadow: 1px 1px 2px #000;
+        }
+        .lvl-1 { background: #00cc44; border: 2px solid #ffffff; }
+        .lvl-2 { background: #ffaa00; border: 2px solid #ffffff; }
+        .lvl-3 { background: #00ccff; border: 2px solid #ffffff; color: #000; text-shadow: none; }
+        .lvl-5 { background: #ff00aa; border: 2px solid #ffffff; }
+
+        /* 题目卡片 */
+        .q-card {
+            background: linear-gradient(180deg, #ff9900 0%, #ff5500 100%); 
+            border-radius: 24px; padding: 25px 20px; text-align: center;
+            border: 5px solid var(--accent-yellow); margin-bottom: 20px;
+            box-shadow: 0 8px 0 #cc3300;
+        }
+        .q-text { 
+            font-size: 34px;
+            font-weight: 900; 
+            color: #ffffff; 
+            letter-spacing: 2px;
+            text-shadow: 3px 3px 0px #000000;
+            white-space: pre-line;
+        }
+
+        /* 选项按钮 */
+        .options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .btn-opt {
+            background: linear-gradient(180deg, #00f0ff 0%, #0088ff 100%);
+            border: 4px solid #ffffff; color: #ffffff; 
+            font-size: 26px; font-weight: 900; padding: 18px; border-radius: 20px; cursor: pointer; 
+            text-shadow: 2px 2px 0px #000000;
+            box-shadow: 0 8px 0 #0044aa; transition: all 0.1s;
+        }
+        .btn-opt:active { transform: translateY(4px); box-shadow: 0 4px 0 #0044aa; }
+        .btn-opt:hover { border-color: var(--accent-yellow); }
+
+        .btn-action {
+            background: linear-gradient(180deg, #00ff66 0%, #00aa33 100%); color: white; border: 4px solid #ffffff;
+            padding: 16px 28px; font-size: 22px; font-weight: 900; border-radius: 20px;
+            cursor: pointer; box-shadow: 0 6px 0 #006622; text-shadow: 1px 1px 2px #000; transition: all 0.1s; width: 100%;
+        }
+        .btn-action:active { transform: translateY(3px); box-shadow: 0 3px 0 #006622; }
+
+        /* 辅助工作区 */
+        .visual-workspace {
+            display: none; background: #1f0842; border-radius: 20px; border: 4px solid var(--accent-cyan);
+            padding: 15px; margin-bottom: 15px; min-height: 220px; position: relative;
+            flex-direction: column; justify-content: center; align-items: center;
+        }
+        .visual-workspace.active { display: flex; }
+
+        /* 六年级7位数数位表 */
+        .place-value-house { display: flex; gap: 4px; justify-content: center; width: 100%; }
+        .pv-col {
+            flex: 1; background: #551a8b; border-radius: 12px; border: 2px solid var(--accent-yellow);
+            text-align: center; overflow: hidden; display: flex; flex-direction: column;
+        }
+        .pv-header { background: #aa00aa; padding: 4px 2px; font-weight: 900; font-size: 13px; color: var(--accent-yellow); }
+        .pv-val { padding: 6px 0; font-size: 20px; font-weight: 900; border-bottom: 2px solid var(--accent-yellow); line-height: 1.1; }
+        .pv-input {
+            width: 90%; margin: 4px auto; text-align: center; background: #ffffff; border: 2px solid var(--accent-cyan);
+            color: #000000; font-size: 20px; font-weight: 900; border-radius: 8px; padding: 2px 0; outline: none;
+        }
+
+        /* 积木显示（包含百万位） */
+        .blocks-container { display: flex; flex-direction: column; gap: 10px; width: 100%; }
+        .block-row { display: flex; align-items: center; gap: 10px; background: #441177; padding: 10px 15px; border-radius: 14px; border: 2px solid var(--accent-cyan); }
+        .block-label { width: 180px; font-weight: 900; font-size: 20px; color: var(--accent-yellow); }
+        .block-group { display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
+
+        .b-million { width: 52px; height: 38px; background: #ffd700; color:#000; border: 2px solid #ffffff; border-radius: 6px; display: inline-flex; justify-content: center; align-items: center; font-size: 10px; font-weight: bold; }
+        .b-hundred-k { width: 46px; height: 38px; background: #ff00aa; border: 2px solid #ffffff; border-radius: 6px; display: inline-flex; justify-content: center; align-items: center; font-size: 10px; font-weight: bold; }
+        .b-ten-k { width: 40px; height: 38px; background: #9900ff; border: 2px solid #ffffff; border-radius: 6px; display: inline-flex; justify-content: center; align-items: center; font-size: 10px; font-weight: bold; }
+        .b-thousand { width: 36px; height: 38px; background: #0088ff; border: 2px solid #ffffff; border-radius: 6px; display: inline-flex; justify-content: center; align-items: center; font-size: 10px; font-weight: bold; }
+        .b-hundred { width: 28px; height: 28px; background: #00cc44; border: 2px solid #ffffff; border-radius: 4px; }
+        .b-ten { width: 10px; height: 28px; background: #ff9900; border-radius: 3px; }
+        .b-one { width: 10px; height: 10px; background: #ff0055; border-radius: 2px; }
+
+        /* 精准对齐竖式 (支持 7 位数) */
+        .v-board-7 { font-family: 'Courier New', monospace; font-size: 34px; font-weight: 900; line-height: 1.2; text-align: right; letter-spacing: 4px; min-width: 300px; }
+        .v-carry-row { color: var(--accent-yellow); font-size: 24px; height: 28px; letter-spacing: 4px; }
+
+        /* AI 提示框 */
+        .ai-speech-box { display: flex; align-items: center; gap: 15px; background: #5500aa; padding: 12px 20px; border-radius: 18px; border: 3px solid var(--accent-yellow); margin-bottom: 15px; }
+
+        /* 弹窗 */
+        .modal-overlay { display: none; position: absolute; inset: 0; background: rgba(10, 5, 25, 0.95); z-index: 200; padding: 25px; flex-direction: column; justify-content: space-between; }
+        .modal-overlay.active { display: flex; }
+        .config-group label { display: flex; align-items: center; gap: 10px; font-size: 20px; color: var(--text-light); cursor: pointer; margin-bottom: 15px; }
+        
+        .report-box { background: #220044; padding: 20px; border-radius: 16px; font-size: 18px; border: 3px solid var(--accent-cyan); }
+        .report-item { display: flex; justify-content: space-between; border-bottom: 2px dashed #5500aa; padding: 10px 0; }
+    </style>
+</head>
+<body>
+
+<div class="app-container" id="app-container">
+
+    <!-- 1. 登录界面 -->
+    <div id="screen-login" class="view-screen active">
+        <div style="text-align:center; margin-bottom: 15px;">
+            <h1 style="color:var(--accent-yellow); font-size:38px; text-shadow:3px 3px 0 #000;">🏰 数学逃脱密室 (六年级版)</h1>
+            <p style="color:var(--accent-cyan); font-size:20px; font-weight:900; margin-top:5px;">百万级加法与综合应用挑战</p>
+        </div>
+
+        <div style="background:#441177; padding:25px; border-radius:24px; border:4px solid var(--accent-yellow);">
+            <div style="margin-bottom:15px;">
+                <label style="color:var(--accent-yellow); font-size:18px; font-weight:bold; display:block; margin-bottom:6px;">👦 学生姓名：</label>
+                <input type="text" id="input-name" style="width:100%; padding:12px; background:#ffffff; border:3px solid var(--accent-cyan); border-radius:12px; color:#000; font-size:22px; font-weight:bold;" value="林小明">
+            </div>
+            <div style="margin-bottom:15px;">
+                <label style="color:var(--accent-yellow); font-size:18px; font-weight:bold; display:block; margin-bottom:6px;">🏫 学校与班级：</label>
+                <div style="display:flex; gap:10px;">
+                    <input type="text" id="input-school" style="flex:2; padding:12px; background:#ffffff; border:3px solid var(--accent-cyan); border-radius:12px; color:#000; font-size:20px; font-weight:bold;" value="培才华小">
+                    <input type="text" id="input-class" style="flex:1; padding:12px; background:#ffffff; border:3px solid var(--accent-cyan); border-radius:12px; color:#000; font-size:20px; font-weight:bold;" value="6 仁班">
+                </div>
+            </div>
+            <div>
+                <label style="color:var(--accent-yellow); font-size:18px; font-weight:bold; display:block; margin-bottom:6px;">🎙 AI 老师语音：</label>
+                <select id="voice-gender" style="width:100%; padding:12px; background:#ffffff; border:3px solid var(--accent-cyan); border-radius:12px; color:#000; font-size:20px; font-weight:bold;">
+                    <option value="female">👩‍🏫 亲切女老师声音</option>
+                    <option value="male">👨‍🏫 稳重男老师声音</option>
+                </select>
+            </div>
+        </div>
+
+        <div style="display:flex; gap:12px; margin-top:20px;">
+            <button class="btn-action" style="background:linear-gradient(180deg, #888 0%, #444 100%); border-color:#fff;" onclick="openTeacherDashboard()">👨‍🏫 教师设置</button>
+            <button class="btn-action" onclick="startGame()">🚀 开始挑战</button>
+        </div>
+    </div>
+
+    <!-- 2. 主游戏画面 -->
+    <div id="screen-game" class="view-screen">
+        <div class="player-hud">
+            <div>👤 <span id="hud-name">小明</span></div>
+            <div>🪙 金币: <span id="hud-coins" style="color:var(--accent-yellow);">0</span></div>
+            <div>🔑 钥匙: <span id="hud-keys">0/2</span></div>
+            <div>💎 水晶: <span id="hud-crystals">0/2</span></div>
+        </div>
+
+        <div class="level-indicator-bar">
+            <div>关卡进度：<span id="level-indicator">1/5</span></div>
+            <div id="ai-level-badge" class="ai-level-badge lvl-1">🟢 Level 1：独立挑战</div>
+        </div>
+
+        <div class="ai-speech-box">
+            <div style="font-size:40px;" id="ai-avatar">👩‍🏫</div>
+            <div style="font-size:18px; color:#ffffff; font-weight:bold;" id="ai-speech">
+                请独立完成这道题目，加油！
+            </div>
+        </div>
+
+        <div class="visual-workspace" id="visual-workspace"></div>
+
+        <div class="q-card">
+            <div class="q-text" id="q-text">1 250 000 + 2 430 000 = ?</div>
+        </div>
+
+        <div class="options-grid" id="options-grid"></div>
+    </div>
+
+    <!-- 3. 教师后台 Modal -->
+    <div class="modal-overlay" id="modal-teacher">
+        <div>
+            <h2 style="color:var(--accent-yellow); margin-bottom:20px; font-size:30px;">👨‍🏫 教师后台设置</h2>
+            <div style="background:#330066; padding:20px; border-radius:20px; border:3px solid var(--accent-yellow);">
+                <div class="config-group">
+                    <label><input type="radio" name="vs-mode" value="auto" checked> 🤖 AI 智能自动递进</label>
+                </div>
+                <div class="config-group">
+                    <label><input type="radio" name="vs-mode" value="always"> ☑ 强制显示图像辅助</label>
+                </div>
+                <div class="config-group">
+                    <label><input type="radio" name="vs-mode" value="off"> 🚫 完全关闭图像辅助</label>
+                </div>
+                <hr style="border-color:#5500aa; margin:15px 0;">
+                <div class="config-group">
+                    <label><input type="checkbox" id="cfg-voice" checked> 🔊 开启 AI 老师语音</label>
+                </div>
+            </div>
+        </div>
+        <button class="btn-action" onclick="closeTeacherDashboard()">保存并返回</button>
+    </div>
+
+    <!-- 4. 通关画面 -->
+    <div id="screen-chest" class="view-screen">
+        <h2 style="text-align:center; color:var(--accent-yellow); font-size:36px; margin-bottom:15px; text-shadow:2px 2px 0 #000;">🎁 成功破解第一密室！</h2>
+        <div style="text-align:center; font-size:90px; margin:20px 0;">💎 🔑 🪙</div>
+        <p style="text-align:center; color:var(--accent-cyan); font-size:24px; font-weight:bold; margin-bottom:20px;">接下来进入【百万级进位加法与应用题大挑战】！</p>
+        <button class="btn-action" onclick="nextStage()">进入终极密室 🚪➔</button>
+    </div>
+
+    <!-- 5. 诊断报告画面 -->
+    <div id="screen-report" class="view-screen">
+        <h2 style="text-align:center; color:var(--accent-yellow); font-size:32px; margin-bottom:15px; text-shadow:2px 2px 0 #000;">🏆 AI 分层学习诊断报告</h2>
+        <div class="report-box" id="report-content"></div>
+        <div style="display:flex; gap:12px; margin-top:15px;">
+            <button class="btn-action" style="background:linear-gradient(180deg, #888 0%, #444 100%);" onclick="window.print()">📄 打印报告</button>
+            <button class="btn-action" onclick="location.reload()">🔄 重新挑战</button>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    class SoundFX {
+        constructor() { this.ctx = new (window.AudioContext || window.webkitAudioContext)(); }
+        playDing() {
+            const osc = this.ctx.createOscillator(), gain = this.ctx.createGain();
+            osc.type = 'sine'; osc.frequency.setValueAtTime(523.25, this.ctx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(1046.50, this.ctx.currentTime + 0.3);
+            gain.gain.setValueAtTime(0.3, this.ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.3);
+            osc.connect(gain); gain.connect(this.ctx.destination);
+            osc.start(); osc.stop(this.ctx.currentTime + 0.3);
+        }
+        playBuzz() {
+            const osc = this.ctx.createOscillator(), gain = this.ctx.createGain();
+            osc.type = 'sawtooth'; osc.frequency.setValueAtTime(150, this.ctx.currentTime);
+            osc.frequency.linearRampToValueAtTime(80, this.ctx.currentTime + 0.3);
+            gain.gain.setValueAtTime(0.3, this.ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.3);
+            osc.connect(gain); gain.connect(this.ctx.destination);
+            osc.start(); osc.stop(this.ctx.currentTime + 0.3);
+        }
+    }
+    const sfx = new SoundFX();
+
+    // 格式化数字用空格隔开，如 1250000 -> 1 250 000
+    function formatNumberWithSpace(num) {
+        if (num === null || num === undefined) return '';
+        return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+    }
+</script>
+
+<script>
+    /* 六年级课本与标准题库（支持百万级数域） */
+    const questionBank = {
+        // 关卡 1：六年级基础与百万以内大数加法 (5 题)
+        stage1: [
+            { q: "1 250 410 + 2 315 145 = ?", a: 3565555, opts: [3565555, 3565455, 3465555, 3565565], n1: 1250410, n2: 2315145 },
+            { q: "3 120 045 + 1 435 812 = ?", a: 4555857, opts: [4555857, 4555757, 4455857, 4565857], n1: 3120045, n2: 1435812 },
+            { q: "2 504 123 + 1 231 654 = ?", a: 3735777, opts: [3735777, 3735677, 3635777, 3735877], n1: 2504123, n2: 1231654 },
+            { q: "4 120 301 + 3 654 482 = ?", a: 7774783, opts: [7774783, 7774683, 7674783, 7774883], n1: 4120301, n2: 3654482 },
+            { q: "5 200 143 + 2 158 721 = ?", a: 7358864, opts: [7358864, 7358764, 7258864, 7358964], n1: 5200143, n2: 2158721 }
+        ],
+        // 关卡 2：六年级百万级连续进位与真实应用题 (5 题)
+        stage2: [
+            { q: "某国第1季与第2季疫苗接种总量是多少？\n1 980 740 + 2 102 560 = ?", a: 4083300, opts: [4083300, 4083200, 4073300, 4083400], n1: 1980740, n2: 2102560 },
+            { q: "2 468 815 + 1 752 938 = ?", a: 4221753, opts: [4221753, 4220753, 4121753, 4221853], n1: 2468815, n2: 1752938 },
+            { q: "4 685 920 + 2 754 891 = ?", a: 7440811, opts: [7440811, 7340811, 7440711, 7540811], n1: 4685920, n2: 2754891 },
+            { q: "5 871 534 + 3 638 888 = ?", a: 9510422, opts: [9510422, 9410422, 9520422, 9610422], n1: 5871534, n2: 3638888 },
+            { q: "3 784 456 + 4 596 678 = ?", a: 8381134, opts: [8381134, 8371134, 8281134, 8381234], n1: 3784456, n2: 4596678 }
+        ]
+    };
+
+    let playerData = { name: '', school: '', className: '', voice: 'female', coins: 0, keys: 0, crystals: 0 };
+    let teacherConfig = { visualMode: 'auto', voiceEnabled: true };
+
+    let currentStage = 1;
+    let currentQIndex = 0;
+    let stageQuestions = [];
+    let currentQuestion = null;
+
+    let currentAiLevel = 1;
+    let wrongAttemptsForCurrentQ = 0;
+    let microLearningSubStep = 0;
+    let vStep = 0;
+
+    let stats = { totalAnswered: 0, correctFirstTry: 0, aiHelpsCount: 0, levelReachMax: 1, startTime: null, endTime: null };
+
+    function showScreen(screenId) {
+        document.querySelectorAll('.view-screen').forEach(s => s.classList.remove('active'));
+        document.getElementById(screenId).classList.add('active');
+    }
+
+    function openTeacherDashboard() { document.getElementById('modal-teacher').classList.remove('active'); document.getElementById('modal-teacher').classList.add('active'); }
+    function closeTeacherDashboard() {
+        const radios = document.getElementsByName('vs-mode');
+        radios.forEach(r => { if(r.checked) teacherConfig.visualMode = r.value; });
+        teacherConfig.voiceEnabled = document.getElementById('cfg-voice').checked;
+        document.getElementById('modal-teacher').classList.remove('active');
+    }
+
+    function startGame() {
+        playerData.name = document.getElementById('input-name').value.trim() || "小明";
+        playerData.school = document.getElementById('input-school').value.trim() || "华小";
+        playerData.className = document.getElementById('input-class').value.trim() || "6A";
+        playerData.voice = document.getElementById('voice-gender').value;
+
+        document.getElementById('hud-name').innerText = playerData.name;
+        document.getElementById('ai-avatar').innerText = playerData.voice === 'female' ? '👩‍🏫' : '👨‍🏫';
+
+        stats.startTime = new Date();
+        showScreen('screen-game');
+        loadStage(1);
+    }
+
+    function loadStage(stageNum) {
+        currentStage = stageNum;
+        currentQIndex = 0;
+        stageQuestions = questionBank[`stage${stageNum}`];
+        loadQuestion();
+    }
+
+    function loadQuestion() {
+        wrongAttemptsForCurrentQ = 0;
+        currentAiLevel = (teacherConfig.visualMode === 'always') ? 3 : 1;
+        microLearningSubStep = 0;
+        vStep = 0;
+
+        currentQuestion = stageQuestions[currentQIndex];
+
+        document.getElementById('level-indicator').innerText = `${currentQIndex + 1}/${stageQuestions.length}`;
+        document.getElementById('q-text').innerText = `${currentQIndex + 1}. ${currentQuestion.q}`;
+
+        renderOptions(currentQuestion.opts, currentQuestion.a);
+        updateAiLevelUI();
+    }
+
+    function renderOptions(optionsArr, correctAns) {
+        const optionsGrid = document.getElementById('options-grid');
+        optionsGrid.innerHTML = '';
+        const shuffled = [...optionsArr].sort(() => Math.random() - 0.5);
+
+        shuffled.forEach((opt, i) => {
+            const btn = document.createElement('button');
+            btn.className = 'btn-opt';
+            btn.innerText = `${String.fromCharCode(65 + i)}. ${formatNumberWithSpace(opt)}`;
+            btn.onclick = () => handleAnswer(opt, correctAns);
+            optionsGrid.appendChild(btn);
+        });
+    }
+
+    function handleAnswer(selectedOpt, targetAns) {
+        stats.totalAnswered++;
+
+        if (selectedOpt === targetAns) {
+            sfx.playDing();
+
+            if (currentAiLevel === 5 && microLearningSubStep < 3) {
+                microLearningSubStep++;
+                runLevelMicroLearning();
+                return;
+            }
+
+            if (wrongAttemptsForCurrentQ === 0) stats.correctFirstTry++;
+            playerData.coins += 10;
+            updateHUD();
+
+            currentQIndex++;
+            if (currentQIndex < stageQuestions.length) {
+                loadQuestion();
+            } else {
+                finishStage();
+            }
+        } else {
+            sfx.playBuzz();
+            wrongAttemptsForCurrentQ++;
+            stats.aiHelpsCount++;
+
+            document.getElementById('app-container').classList.add('shake');
+            setTimeout(() => document.getElementById('app-container').classList.remove('shake'), 400);
+
+            if (teacherConfig.visualMode === 'auto') {
+                currentAiLevel = Math.min(5, wrongAttemptsForCurrentQ + 1);
+            }
+
+            if (currentAiLevel > stats.levelReachMax) stats.levelReachMax = currentAiLevel;
+            updateAiLevelUI();
+        }
+    }
+
+    function updateAiLevelUI() {
+        const badge = document.getElementById('ai-level-badge');
+        const speech = document.getElementById('ai-speech');
+        const workspace = document.getElementById('visual-workspace');
+
+        workspace.classList.remove('active');
+        workspace.innerHTML = '';
+
+        const n1 = currentQuestion.n1;
+        const n2 = currentQuestion.n2;
+
+        if (currentAiLevel === 1) {
+            badge.className = "ai-level-badge lvl-1";
+            badge.innerText = "🟢 Level 1：独立挑战";
+            speech.innerText = "请独立完成这道百万级大数题目，加油！";
+            speakText(speech.innerText);
+        }
+        else if (currentAiLevel === 2) {
+            badge.className = "ai-level-badge lvl-2";
+            badge.innerText = "🟡 Level 2：七位数数位与进位";
+            speech.innerText = "请在顶部的黄色小框填上进位数字，下方填入对应数位的结果！";
+            speakText(speech.innerText);
+
+            workspace.classList.add('active');
+            renderPlaceValueHouse(n1, n2);
+        }
+        else if (currentAiLevel === 3) {
+            badge.className = "ai-level-badge lvl-3";
+            badge.innerText = "🔵 Level 3：百万积木与数位辅助";
+            speech.innerText = "老师用百万数位积木帮助你，按位数合起来看！";
+            speakText(speech.innerText);
+
+            workspace.classList.add('active');
+            renderBaseTenBlocks(n1, n2);
+        }
+        else if (currentAiLevel === 4) {
+            badge.className = "ai-level-badge lvl-5";
+            badge.innerText = "🟣 Level 4：分步竖式讲解";
+            vStep = 0;
+            workspace.classList.add('active');
+            renderVerticalMethodDemo(n1, n2);
+        }
+        else if (currentAiLevel === 5) {
+            badge.className = "ai-level-badge lvl-5";
+            badge.innerText = "🔴 Level 5：拆解微学习";
+            runLevelMicroLearning();
+        }
+    }
+
+    /* Level 2: 六年级7位数数位与进位表 */
+    function renderPlaceValueHouse(n1, n2) {
+        const s1 = n1.toString().padStart(7, '0');
+        const s2 = n2.toString().padStart(7, '0');
+
+        document.getElementById('visual-workspace').innerHTML = `
+            <div style="display:flex; flex-direction:column; align-items:center; gap:8px; width:100%;">
+                <div class="place-value-house">
+                    <!-- 百万位 -->
+                    <div class="pv-col">
+                        <div class="pv-header">百万</div>
+                        <div style="padding: 2px 0;">
+                            <input type="text" class="pv-input" id="pv-c-m" maxlength="1" style="width:26px; height:24px; font-size:14px; background:#fff9c4;" placeholder="0">
+                        </div>
+                        <div class="pv-val">${s1[0]}<br>+<br>${s2[0]}</div>
+                        <input type="text" class="pv-input" id="pv-in-m" maxlength="1" placeholder="?">
+                    </div>
+                    <!-- 十万位 -->
+                    <div class="pv-col">
+                        <div class="pv-header">十万</div>
+                        <div style="padding: 2px 0;">
+                            <input type="text" class="pv-input" id="pv-c-hk" maxlength="1" style="width:26px; height:24px; font-size:14px; background:#fff9c4;" placeholder="0">
+                        </div>
+                        <div class="pv-val">${s1[1]}<br>+<br>${s2[1]}</div>
+                        <input type="text" class="pv-input" id="pv-in-hk" maxlength="1" placeholder="?">
+                    </div>
+                    <!-- 万位 -->
+                    <div class="pv-col">
+                        <div class="pv-header">万位</div>
+                        <div style="padding: 2px 0;">
+                            <input type="text" class="pv-input" id="pv-c-tk" maxlength="1" style="width:26px; height:24px; font-size:14px; background:#fff9c4;" placeholder="0">
+                        </div>
+                        <div class="pv-val">${s1[2]}<br>+<br>${s2[2]}</div>
+                        <input type="text" class="pv-input" id="pv-in-tk" maxlength="1" placeholder="?">
+                    </div>
+                    <!-- 千位 -->
+                    <div class="pv-col">
+                        <div class="pv-header">千位</div>
+                        <div style="padding: 2px 0;">
+                            <input type="text" class="pv-input" id="pv-c-th" maxlength="1" style="width:26px; height:24px; font-size:14px; background:#fff9c4;" placeholder="0">
+                        </div>
+                        <div class="pv-val">${s1[3]}<br>+<br>${s2[3]}</div>
+                        <input type="text" class="pv-input" id="pv-in-th" maxlength="1" placeholder="?">
+                    </div>
+                    <!-- 百位 -->
+                    <div class="pv-col">
+                        <div class="pv-header">百位</div>
+                        <div style="padding: 2px 0;">
+                            <input type="text" class="pv-input" id="pv-c-hu" maxlength="1" style="width:26px; height:24px; font-size:14px; background:#fff9c4;" placeholder="0">
+                        </div>
+                        <div class="pv-val">${s1[4]}<br>+<br>${s2[4]}</div>
+                        <input type="text" class="pv-input" id="pv-in-hu" maxlength="1" placeholder="?">
+                    </div>
+                    <!-- 十位 -->
+                    <div class="pv-col">
+                        <div class="pv-header">十位</div>
+                        <div style="padding: 2px 0;">
+                            <input type="text" class="pv-input" id="pv-c-te" maxlength="1" style="width:26px; height:24px; font-size:14px; background:#fff9c4;" placeholder="0">
+                        </div>
+                        <div class="pv-val">${s1[5]}<br>+<br>${s2[5]}</div>
+                        <input type="text" class="pv-input" id="pv-in-te" maxlength="1" placeholder="?">
+                    </div>
+                    <!-- 个位 -->
+                    <div class="pv-col">
+                        <div class="pv-header">个位</div>
+                        <div style="padding: 2px 0; height:28px; display:flex; align-items:center; justify-content:center;">
+                            <span style="font-size:12px; color:#aaa;">-</span>
+                        </div>
+                        <div class="pv-val">${s1[6]}<br>+<br>${s2[6]}</div>
+                        <input type="text" class="pv-input" id="pv-in-on" maxlength="1" placeholder="?">
+                    </div>
+                </div>
+
+                <button class="btn-action" style="max-width:240px; padding:8px 16px; font-size:18px;" onclick="checkPlaceValueInputs()">
+                    ✍️ 提交数位答案
+                </button>
+            </div>
+        `;
+    }
+
+    function checkPlaceValueInputs() {
+        const inM  = document.getElementById('pv-in-m').value.trim();
+        const inHk = document.getElementById('pv-in-hk').value.trim();
+        const inTk = document.getElementById('pv-in-tk').value.trim();
+        const inTh = document.getElementById('pv-in-th').value.trim();
+        const inHu = document.getElementById('pv-in-hu').value.trim();
+        const inTe = document.getElementById('pv-in-te').value.trim();
+        const inOn = document.getElementById('pv-in-on').value.trim();
+
+        if (inM === '' || inHk === '' || inTk === '' || inTh === '' || inHu === '' || inTe === '' || inOn === '') {
+            alert("请把所有数位的答案都填上哦！");
+            return;
+        }
+
+        const userAnsNum = parseInt(`${inM}${inHk}${inTk}${inTh}${inHu}${inTe}${inOn}`, 10);
+        if (userAnsNum === currentQuestion.a) {
+            handleAnswer(userAnsNum, currentQuestion.a);
+        } else {
+            handleAnswer(-1, currentQuestion.a);
+        }
+    }
+
+    // Level 3: 六年级 7 位数积木显示
+    function renderBaseTenBlocks(n1, n2) {
+        const buildBlocks = (num) => {
+            const m  = Math.floor(num / 1000000);
+            const hk = Math.floor((num % 1000000) / 100000);
+            const tk = Math.floor((num % 100000) / 10000);
+            const th = Math.floor((num % 10000) / 1000);
+            const hu = Math.floor((num % 1000) / 100);
+            const te = Math.floor((num % 100) / 10);
+            const on = num % 10;
+
+            let html = '<div class="block-group">';
+            for(let i=0; i<m; i++) html += `<div class="b-million">100万</div>`;
+            for(let i=0; i<hk; i++) html += `<div class="b-hundred-k">10万</div>`;
+            for(let i=0; i<tk; i++) html += `<div class="b-ten-k">1万</div>`;
+            for(let i=0; i<th; i++) html += `<div class="b-thousand">1000</div>`;
+            for(let i=0; i<hu; i++) html += `<div class="b-hundred"></div>`;
+            for(let i=0; i<te; i++) html += `<div class="b-ten"></div>`;
+            for(let i=0; i<on; i++) html += `<div class="b-one"></div>`;
+            html += '</div>';
+            return html;
+        };
+
+        document.getElementById('visual-workspace').innerHTML = `
+            <div class="blocks-container">
+                <div class="block-row"><div class="block-label">${formatNumberWithSpace(n1)}</div>${buildBlocks(n1)}</div>
+                <div class="block-row"><div class="block-label">+ ${formatNumberWithSpace(n2)}</div>${buildBlocks(n2)}</div>
+            </div>
+        `;
+    }
+
+    /* Level 4: 7位数精准位对齐竖式 */
+    function renderVerticalMethodDemo(n1, n2) {
+        const s1 = n1.toString().padStart(7, '0');
+        const s2 = n2.toString().padStart(7, '0');
+
+        let carry = 0;
+        let carries = [0,0,0,0,0,0,0];
+        let sums = [0,0,0,0,0,0,0];
+        let ansDigits = [0,0,0,0,0,0,0];
+
+        for(let i = 6; i >= 0; i--) {
+            let sum = parseInt(s1[i]) + parseInt(s2[i]) + carry;
+            sums[i] = sum;
+            ansDigits[i] = sum % 10;
+            carry = sum >= 10 ? 1 : 0;
+            if(i > 0) carries[i-1] = carry;
+        }
+
+        const stepNames = ["个位", "十位", "百位", "千位", "万位", "十万位", "百万位"];
+        let speechText = "";
+        
+        let activeIdx = 6 - vStep; 
+        if (vStep < 7) {
+            let d1 = parseInt(s1[activeIdx]), d2 = parseInt(s2[activeIdx]);
+            let cIn = (activeIdx < 6) ? carries[activeIdx] : 0;
+            speechText = `【第 ${vStep + 1} 步：${stepNames[vStep]}】${d1} + ${d2}${cIn ? ' + 进位 1' : ''} = ${sums[activeIdx]}。写 ${ansDigits[activeIdx]}${carries[activeIdx-1] ? '，向前一位进 1！' : '。'}`;
+        } else {
+            vStep = 6;
+            speechText = `计算完毕，最终答案是 ${ formatNumberWithSpace(n1 + n2) }！`;
+        }
+
+        document.getElementById('ai-speech').innerText = speechText;
+        speakText(speechText);
+
+        let carryHtml = carries.map((c, idx) => (idx < 6 && carries[idx]) ? "1" : "&nbsp;").join("");
+        let ansHtml = ansDigits.map((d, idx) => (idx >= 6 - vStep) ? d : "&nbsp;").join("");
+
+        document.getElementById('visual-workspace').innerHTML = `
+            <div style="display:flex; flex-direction:column; align-items:center; gap:10px;">
+                <div class="v-board-7">
+                    <div class="v-carry-row">&nbsp;${carryHtml}</div>
+                    <div>&nbsp;${s1}</div>
+                    <div>+${s2}</div>
+                    <div style="height:3px; background:white; margin:3px 0;"></div>
+                    <div style="color:var(--accent-green);">&nbsp;${ansHtml}</div>
+                </div>
+                
+                <div style="display:flex; gap:10px; width:100%; max-width:320px;">
+                    <button class="btn-action" style="padding:8px 15px; font-size:18px; background:linear-gradient(180deg,#888,#444);" 
+                            onclick="stepVerticalDemo(-1)" ${vStep === 0 ? 'disabled' : ''}>
+                        ⏮ 上一步
+                    </button>
+                    <button class="btn-action" style="padding:8px 15px; font-size:18px;" 
+                            onclick="stepVerticalDemo(1)" ${vStep === 6 ? 'disabled' : ''}>
+                        ${vStep === 6 ? '讲解完毕 ✅' : '下一步 ➔'}
+                    </button>
+                </div>
+            </div>
+        `;
+    }
+
+    function stepVerticalDemo(dir) {
+        vStep += dir;
+        if (vStep < 0) vStep = 0;
+        if (vStep > 6) vStep = 6;
+        renderVerticalMethodDemo(currentQuestion.n1, currentQuestion.n2);
+    }
+
+    // Level 5: 微学习拆解
+    function runLevelMicroLearning() {
+        const speech = document.getElementById('ai-speech');
+        const qText = document.getElementById('q-text');
+
+        const n1 = currentQuestion.n1;
+        const n2 = currentQuestion.n2;
+
+        const low1 = n1 % 1000, low2 = n2 % 1000;
+        const mid1 = n1 % 100000, mid2 = n2 % 100000;
+
+        if (microLearningSubStep === 0) {
+            speech.innerText = "别急！我们把百万大数拆小。先算后三位（千位以内）！";
+            speakText(speech.innerText);
+            qText.innerText = `🟢 微关卡 1/3: ${low1} + ${low2} = ?`;
+            const ans = low1 + low2;
+            renderOptions([ans, ans + 10, ans - 10, ans + 100], ans);
+        } else if (microLearningSubStep === 1) {
+            speech.innerText = "太棒了！第二关：加入万位计算！";
+            speakText(speech.innerText);
+            qText.innerText = `🟡 微关卡 2/3: ${mid1} + ${mid2} = ?`;
+            const ans = mid1 + mid2;
+            renderOptions([ans, ans - 1000, ans + 1000, ans + 100], ans);
+        } else if (microLearningSubStep === 2) {
+            speech.innerText = "优秀！第三关：合并百万位计算！";
+            speakText(speech.innerText);
+            qText.innerText = `🟠 微关卡 3/3: ${formatNumberWithSpace(n1)} + ${formatNumberWithSpace(n2)} = ?`;
+            const ans = n1 + n2;
+            renderOptions([ans, ans - 100000, ans + 100000, ans - 10000], ans);
+        } else {
+            speech.innerText = "完美！你掌握了全部拆解步骤！";
+            speakText(speech.innerText);
+            qText.innerText = `🔴 回到原题: ${currentQuestion.q}`;
+            renderOptions(currentQuestion.opts, currentQuestion.a);
+            microLearningSubStep = 3;
+        }
+    }
+
+    function speakText(text) {
+        if (teacherConfig.voiceEnabled && 'speechSynthesis' in window) {
+            window.speechSynthesis.cancel();
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'zh-CN';
+            utterance.rate = 0.95;
+            window.speechSynthesis.speak(utterance);
+        }
+    }
+
+    function updateHUD() {
+        document.getElementById('hud-coins').innerText = playerData.coins;
+        document.getElementById('hud-keys').innerText = `${playerData.keys}/2`;
+        document.getElementById('hud-crystals').innerText = `${playerData.crystals}/2`;
+    }
+
+    function finishStage() {
+        playerData.keys++; playerData.crystals++; playerData.coins += 100;
+        updateHUD();
+
+        if (currentStage < 2) showScreen('screen-chest');
+        else { stats.endTime = new Date(); showFinalReport(); }
+    }
+
+    function nextStage() {
+        showScreen('screen-game');
+        loadStage(currentStage + 1);
+    }
+
+    function showFinalReport() {
+        showScreen('screen-report');
+        const box = document.getElementById('report-content');
+        const duration = Math.max(1, Math.round((stats.endTime - stats.startTime) / 60000));
+        const accuracy = Math.round((stats.correctFirstTry / stats.totalAnswered) * 100) || 100;
+
+        box.innerHTML = `
+            <div class="report-item"><span>👦 学生姓名：</span><strong>${playerData.name} (${playerData.school} - ${playerData.className})</strong></div>
+            <div class="report-item"><span>⏱ 通关耗时：</span><strong>${duration} 分钟</strong></div>
+            <div class="report-item"><span>🎯 首次答对率：</span><strong>${accuracy}%</strong></div>
+            <div class="report-item"><span>🤖 最高 AI 支援：</span><strong style="color:var(--accent-yellow)">Level ${stats.levelReachMax}</strong></div>
+            <div class="report-item"><span>💡 触发辅助次数：</span><strong>${stats.aiHelpsCount} 次</strong></div>
+        `;
+    }
+</script>
+</body>
+</html>

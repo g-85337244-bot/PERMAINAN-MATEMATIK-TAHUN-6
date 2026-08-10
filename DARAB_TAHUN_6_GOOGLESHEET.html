@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🏰 数学逃脱密室 - 六年级乘法特别版</title>
+    <style>
+        :root {
+            --bg-bright: linear-gradient(135deg, #1b2a47 0%, #4663ac 100%);
+            --card-main: #1c2b53;
+            --accent-yellow: #ffea00;
+            --accent-green: #00ff66;
+            --accent-cyan: #00f0ff;
+            --accent-pink: #ff2a8d;
+            --text-light: #ffffff;
+        }
+
+        * { box-sizing: border-box; user-select: none; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Segoe UI', 'Comic Sans MS', sans-serif;
+            background: var(--bg-bright);
+            color: var(--text-light);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 15px;
+        }
+
+        .app-container {
+            width: 100%;
+            max-width: 1000px;
+            background: rgba(20, 32, 65, 0.95);
+            border-radius: 32px;
+            box-shadow: 0 0 35px rgba(0, 240, 255, 0.5), inset 0 0 15px rgba(255, 255, 255, 0.2);
+            border: 5px solid var(--accent-cyan);
+            overflow: hidden;
+            position: relative;
+            min-height: 720px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .bgm-toggle-btn {
+            position: absolute;
+            top: 15px; right: 15px; z-index: 100;
+            background: rgba(0, 0, 0, 0.6); border: 2px solid var(--accent-yellow);
+            color: #fff; font-size: 20px; padding: 6px 12px; border-radius: 20px;
+            cursor: pointer; transition: all 0.2s;
+        }
+        .bgm-toggle-btn:hover { transform: scale(1.05); }
+
+        .shake { animation: shakeAnim 0.4s ease-in-out; }
+        @keyframes shakeAnim {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-12px); }
+            40%, 80% { transform: translateX(12px); }
+        }
+
+        .view-screen {
+            display: none; padding: 25px; flex: 1; flex-direction: column;
+            justify-content: space-between; animation: fadeIn 0.25s ease-out;
+        }
+        .view-screen.active { display: flex; }
+        @keyframes fadeIn { from { opacity: 0; transform: scale(0.97); } to { opacity: 1; transform: scale(1); } }
+
+        .player-hud {
+            display: flex; justify-content: space-between; align-items: center;
+            background: #ff0055; padding: 12px 24px; border-radius: 20px;
+            border: 3px solid var(--accent-yellow); font-size: 20px; font-weight: 900;
+            box-shadow: 0 6px 0 #990033; text-shadow: 1px 1px 2px #000; margin-right: 60px;
+        }
+
+        .level-indicator-bar {
+            display: flex; justify-content: space-between; align-items: center;
+            background: #0088ff; padding: 10px 20px; border-radius: 16px; margin: 15px 0;
+            border: 3px solid #ffffff; font-size: 18px; font-weight: bold; box-shadow: 0 4px 0 #0055aa;
+        }
+
+        .ai-level-badge {
+            padding: 6px 18px; border-radius: 30px; font-weight: 900; font-size: 16px;
+            display: inline-flex; align-items: center; gap: 6px; text-shadow: 1px 1px 2px #000;
+        }
+        .lvl-1 { background: #00cc44; border: 2px solid #ffffff; }
+        .lvl-2 { background: #ffaa00; border: 2px solid #ffffff; }
+
+        .q-card {
+            background: linear-gradient(180deg, #ff0055 0%, #aa0033 100%); 
+            border-radius: 24px; padding: 25px; text-align: center;
+            border: 5px solid var(--accent-yellow); margin-bottom: 15px; box-shadow: 0 8px 0 #660022;
+        }
+        .q-text { font-size: 32px; font-weight: 900; color: #ffffff; letter-spacing: 1px; text-shadow: 2px 2px 0px #000; }
+
+        .options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .btn-opt {
+            background: linear-gradient(180deg, #00f0ff 0%, #0088ff 100%);
+            border: 4px solid #ffffff; color: #ffffff; font-size: 22px; font-weight: 900;
+            padding: 14px; border-radius: 20px; cursor: pointer; text-shadow: 2px 2px 0px #000;
+            box-shadow: 0 8px 0 #0044aa; transition: all 0.1s;
+        }
+        .btn-opt:active { transform: translateY(4px); box-shadow: 0 4px 0 #0044aa; }
+
+        .btn-action {
+            background: linear-gradient(180deg, #00ff66 0%, #00aa33 100%); color: white; border: 4px solid #ffffff;
+            padding: 14px 28px; font-size: 20px; font-weight: 900; border-radius: 20px; cursor: pointer;
+            box-shadow: 0 6px 0 #006622; text-shadow: 1px 1px 2px #000; transition: all 0.1s; width: 100%;
+        }
+
+        .visual-workspace {
+            display: none; background: #0f1a30; border-radius: 20px; border: 4px solid var(--accent-cyan);
+            padding: 15px; margin-bottom: 15px; min-height: 100px; position: relative;
+            flex-direction: column; justify-content: center; align-items: center;
+            font-size: 20px; color: var(--accent-yellow); text-align: center; line-height: 1.5;
+        }
+        .visual-workspace.active { display: flex; }
+
+        .ai-speech-box { display: flex; align-items: center; gap: 15px; background: #004488; padding: 12px 20px; border-radius: 18px; border: 3px solid var(--accent-yellow); margin-bottom: 12px; }
+        .modal-overlay { display: none; position: absolute; inset: 0; background: rgba(10, 15, 30, 0.95); z-index: 200; padding: 25px; flex-direction: column; justify-content: space-between; }
+        .modal-overlay.active { display: flex; }
+        .config-group label { display: flex; align-items: center; gap: 10px; font-size: 20px; color: var(--text-light); cursor: pointer; margin-bottom: 15px; }
+        .report-box { background: #0e1a35; padding: 20px; border-radius: 16px; font-size: 18px; border: 3px solid var(--accent-cyan); }
+        .report-item { display: flex; justify-content: space-between; border-bottom: 2px dashed #0055aa; padding: 10px 0; }
+    </style>
+</head>
+<body>
+
+<div class="app-container" id="app-container">
+
+    <button class="bgm-toggle-btn" id="bgm-btn" onclick="soundAudio.toggleBGM()">🎵 BGM: 关</button>
+
+    <!-- 1. 登录界面 -->
+    <div id="screen-login" class="view-screen active">
+        <div style="text-align:center; margin-bottom: 15px;">
+            <h1 style="color:var(--accent-yellow); font-size:38px; text-shadow:3px 3px 0 #000;">🏰 数学逃脱密室</h1>
+            <p style="color:var(--accent-cyan); font-size:22px; font-weight:900; margin-top:5px;">六年级乘法大挑战（百万单位与综合运算）</p>
+        </div>
+
+        <div style="background:#182848; padding:25px; border-radius:24px; border:4px solid var(--accent-yellow);">
+            <div style="margin-bottom:15px;">
+                <label style="color:var(--accent-yellow); font-size:18px; font-weight:bold; display:block; margin-bottom:6px;">👦 学生姓名：</label>
+                <input type="text" id="input-name" style="width:100%; padding:12px; background:#ffffff; border:3px solid var(--accent-cyan); border-radius:12px; color:#000; font-size:22px; font-weight:bold;" value="林小明">
+            </div>
+            <div style="margin-bottom:15px;">
+                <label style="color:var(--accent-yellow); font-size:18px; font-weight:bold; display:block; margin-bottom:6px;">🏫 学校与班级：</label>
+                <div style="display:flex; gap:10px;">
+                    <input type="text" id="input-school" style="flex:2; padding:12px; background:#ffffff; border:3px solid var(--accent-cyan); border-radius:12px; color:#000; font-size:20px; font-weight:bold;" value="培才华小">
+                    <input type="text" id="input-class" style="flex:1; padding:12px; background:#ffffff; border:3px solid var(--accent-cyan); border-radius:12px; color:#000; font-size:20px; font-weight:bold;" value="6 仁班">
+                </div>
+            </div>
+            <div>
+                <label style="color:var(--accent-yellow); font-size:18px; font-weight:bold; display:block; margin-bottom:6px;">🎙 AI 老师语音：</label>
+                <select id="voice-gender" style="width:100%; padding:12px; background:#ffffff; border:3px solid var(--accent-cyan); border-radius:12px; color:#000; font-size:20px; font-weight:bold;">
+                    <option value="female">👩‍🏫 亲切女老师声音</option>
+                    <option value="male">👨‍🏫 稳重男老师声音</option>
+                </select>
+            </div>
+        </div>
+
+        <div style="display:flex; gap:12px; margin-top:20px;">
+            <button class="btn-action" style="background:linear-gradient(180deg, #888 0%, #444 100%); border-color:#fff;" onclick="openTeacherDashboard()">👨‍🏫 教师设置</button>
+            <button class="btn-action" onclick="startGame()">🚀 开始六年级挑战</button>
+        </div>
+    </div>
+
+    <!-- 2. 主游戏画面 -->
+    <div id="screen-game" class="view-screen">
+        <div class="player-hud">
+            <div>👤 <span id="hud-name">小明</span></div>
+            <div>🪙 金币: <span id="hud-coins" style="color:var(--accent-yellow);">0</span></div>
+            <div>🔑 钥匙: <span id="hud-keys">0/2</span></div>
+            <div>💎 水晶: <span id="hud-crystals">0/2</span></div>
+        </div>
+
+        <div class="level-indicator-bar">
+            <div>关卡进度：<span id="level-indicator">1/5</span></div>
+            <div id="ai-level-badge" class="ai-level-badge lvl-1">🟢 Level 1：独立挑战</div>
+        </div>
+
+        <div class="ai-speech-box">
+            <div style="font-size:40px;" id="ai-avatar">👩‍🏫</div>
+            <div style="font-size:19px; color:#ffffff; font-weight:bold;" id="ai-speech">
+                请独立完成这道六年级乘法题目，加油！
+            </div>
+        </div>
+
+        <div class="visual-workspace" id="visual-workspace"></div>
+
+        <div class="q-card">
+            <div class="q-text" id="q-text">2.5 × 1.5 = ?</div>
+        </div>
+
+        <div class="options-grid" id="options-grid"></div>
+    </div>
+
+    <!-- 3. 教师后台 Modal -->
+    <div class="modal-overlay" id="modal-teacher">
+        <div>
+            <h2 style="color:var(--accent-yellow); margin-bottom:20px; font-size:30px;">👨‍🏫 教师后台设置</h2>
+            <div style="background:#112244; padding:20px; border-radius:20px; border:3px solid var(--accent-yellow);">
+                <div class="config-group">
+                    <label><input type="radio" name="vs-mode" value="auto" checked> 🤖 AI 智能自动递进</label>
+                </div>
+                <div class="config-group">
+                    <label><input type="radio" name="vs-mode" value="always"> ☑ 强制显示解题辅助</label>
+                </div>
+                <div class="config-group">
+                    <label><input type="radio" name="vs-mode" value="off"> 🚫 完全关闭辅助提示</label>
+                </div>
+                <hr style="border-color:#0055aa; margin:15px 0;">
+                <div class="config-group">
+                    <label><input type="checkbox" id="cfg-voice" checked> 🔊 开启 AI 老师语音</label>
+                </div>
+            </div>
+        </div>
+        <button class="btn-action" onclick="closeTeacherDashboard()">保存并返回</button>
+    </div>
+
+    <!-- 4. 通关画面 -->
+    <div id="screen-chest" class="view-screen">
+        <h2 style="text-align:center; color:var(--accent-yellow); font-size:34px; margin-bottom:15px; text-shadow:2px 2px 0 #000;">🎁 成功破解第一阶乘法密室！</h2>
+        <div style="text-align:center; font-size:80px; margin:20px 0;">💎 🔑 🪙</div>
+        <p style="text-align:center; color:var(--accent-cyan); font-size:22px; font-weight:bold; margin-bottom:20px;">接下来进入【百万单位与百分比乘法综合大挑战】！</p>
+        <button class="btn-action" onclick="nextStage()">进入高阶乘法密室 🚪➔</button>
+    </div>
+
+    <!-- 5. 诊断报告画面 -->
+    <div id="screen-report" class="view-screen">
+        <h2 style="text-align:center; color:var(--accent-yellow); font-size:30px; margin-bottom:15px; text-shadow:2px 2px 0 #000;">🏆 六年级乘法综合能力诊断报告</h2>
+        <div class="report-box" id="report-content"></div>
+        <div style="display:flex; gap:12px; margin-top:15px;">
+            <button class="btn-action" style="background:linear-gradient(180deg, #888 0%, #444 100%);" onclick="window.print()">📄 打印报告</button>
+            <button class="btn-action" onclick="location.reload()">🔄 重新挑战</button>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    class SoundEngine {
+        constructor() {
+            this.ctx = null;
+            this.bgmTimer = null;
+            this.bgmPlaying = false;
+        }
+
+        initContext() {
+            if (!this.ctx) {
+                this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (this.ctx.state === 'suspended') {
+                this.ctx.resume();
+            }
+        }
+
+        playDing() {
+            this.initContext();
+            const osc = this.ctx.createOscillator(), gain = this.ctx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(523.25, this.ctx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(1046.50, this.ctx.currentTime + 0.3);
+            gain.gain.setValueAtTime(0.3, this.ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.3);
+            osc.connect(gain); gain.connect(this.ctx.destination);
+            osc.start(); osc.stop(this.ctx.currentTime + 0.3);
+        }
+
+        playBuzz() {
+            this.initContext();
+            const osc = this.ctx.createOscillator(), gain = this.ctx.createGain();
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(160, this.ctx.currentTime);
+            osc.frequency.linearRampToValueAtTime(90, this.ctx.currentTime + 0.35);
+            gain.gain.setValueAtTime(0.3, this.ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.35);
+            osc.connect(gain); gain.connect(this.ctx.destination);
+            osc.start(); osc.stop(this.ctx.currentTime + 0.35);
+        }
+
+        playTick() {
+            this.initContext();
+            const osc = this.ctx.createOscillator(), gain = this.ctx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(800, this.ctx.currentTime);
+            gain.gain.setValueAtTime(0.1, this.ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.05);
+            osc.connect(gain); gain.connect(this.ctx.destination);
+            osc.start(); osc.stop(this.ctx.currentTime + 0.05);
+        }
+
+        toggleBGM() {
+            this.initContext();
+            const btn = document.getElementById('bgm-btn');
+            if (this.bgmPlaying) {
+                this.stopBGM();
+                btn.innerText = "🔇 BGM: 关";
+                btn.style.borderColor = "var(--accent-yellow)";
+            } else {
+                this.startBGM();
+                btn.innerText = "🎵 BGM: 开";
+                btn.style.borderColor = "var(--accent-green)";
+            }
+        }
+
+        startBGM() {
+            if (this.bgmPlaying) return;
+            this.bgmPlaying = true;
+            
+            const notes = [
+                261.63, 329.63, 392.00, 329.63, 293.66, 349.23, 440.00, 349.23,
+                329.63, 392.00, 523.25, 392.00, 293.66, 349.23, 392.00, 293.66
+            ];
+            let step = 0;
+
+            this.bgmTimer = setInterval(() => {
+                if (!this.bgmPlaying) return;
+                const osc = this.ctx.createOscillator(), gain = this.ctx.createGain();
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(notes[step], this.ctx.currentTime);
+                gain.gain.setValueAtTime(0.02, this.ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.2);
+                osc.connect(gain); gain.connect(this.ctx.destination);
+                osc.start(); osc.stop(this.ctx.currentTime + 0.2);
+                step = (step + 1) % notes.length;
+            }, 250);
+        }
+
+        stopBGM() {
+            this.bgmPlaying = false;
+            if (this.bgmTimer) {
+                clearInterval(this.bgmTimer);
+                this.bgmTimer = null;
+            }
+        }
+    }
+
+    const soundAudio = new SoundEngine();
+
+    function speakText(text) {
+        if (!teacherConfig.voiceEnabled) return;
+        if ('speechSynthesis' in window) {
+            window.speechSynthesis.cancel();
+            const msg = new SpeechSynthesisUtterance(text);
+            msg.lang = 'zh-CN';
+            msg.rate = 0.95;
+            window.speechSynthesis.speak(msg);
+        }
+    }
+</script>
+
+<script>
+    // 💡 无逗号、大数采用空格分隔格式的六年级乘法题库
+    const questionBank = {
+        stage1: [
+            { q: "2.5 × 1.5 = ?", a: "3.75", opts: ["3.75", "37.5", "0.375", "3.25"], hint: "💡 脚手架：先算整数 25 × 15 = 375。因为 2.5 和 1.5 共有 2 位小数，所以从右向左点 2 位小数点，得 3.75。" },
+            { q: "¼ 百万 × 2 = ?", a: "500 000", opts: ["500 000", "250 000", "50 000", "1 000 000"], hint: "💡 脚手架：¼ 百万 = 250 000。250 000 × 2 = 500 000（即 0.5 百万）。" },
+            { q: "0.15 × 1.4 = ?", a: "0.21", opts: ["0.21", "2.1", "0.021", "0.215"], hint: "💡 脚手架：先按整数算 15 × 14 = 210。两个乘数共有 3 位小数，点上小数点为 0.210，即 0.21。" },
+            { q: "⅖ 百万 × 6 = ?", a: "2.4 百万", opts: ["2.4 百万", "1.2 百万", "2⅖ 百万", "12/5 百万"], hint: "💡 脚手架：分子乘整数得 2 × 6 = 12，得 12/5 百万 = 2.4 百万（或 2 400 000）。" },
+            { q: "1.845 × 100 = ?", a: "184.5", opts: ["184.5", "18.45", "1845", "1.8450"], hint: "💡 脚手架：乘以 100，直接将小数点向右移动 2 位即可。" }
+        ],
+        stage2: [
+            { q: "86% × 1.95 百万 = ?", a: "1.677 百万", opts: ["1.677 百万", "16.77 百万", "0.1677 百万", "1.577 百万"], hint: "💡 脚手架：86% 可以化成 0.86。计算 0.86 × 1.95 = 1.677，因此结果为 1.677 百万。" },
+            { q: "¾ 百万 × 4 = ?", a: "3 百万", opts: ["3 百万", "1.5 百万", "12 百万", "300 000"], hint: "💡 脚手架：¾ × 4 = 3，或者 750 000 × 4 = 3 000 000，即 3 百万。" },
+            { q: "0.25 百万 × 8 = ?", a: "2 百万", opts: ["2 百万", "20 百万", "0.2 百万", "2.5 百万"], hint: "💡 脚手架：0.25 × 8 = 2，所以直接得 2 百万（即 2 000 000）。" },
+            { q: "⅕ 百万 × 15 = ?", a: "3 百万", opts: ["3 百万", "5 百万", "1.5 百万", "30 百万"], hint: "💡 脚手架：⅕ × 15 = 3，得 3 百万（或 200 000 × 15 = 3 000 000）。" },
+            { q: "0.064 × 1000 = ?", a: "64", opts: ["64", "6.4", "640", "0.64"], hint: "💡 脚手架：乘以 1000，直接将小数点向右移动 3 位即可。" }
+        ]
+    };
+
+    let playerData = { name: '', school: '', className: '', voice: 'female', coins: 0, keys: 0, crystals: 0 };
+    let teacherConfig = { visualMode: 'auto', voiceEnabled: true };
+
+    let currentStage = 1;
+    let currentQIndex = 0;
+    let stageQuestions = [];
+    let currentQuestion = null;
+
+    let currentAiLevel = 1;
+    let wrongAttemptsForCurrentQ = 0;
+
+    let stats = { totalAnswered: 0, correctFirstTry: 0, aiHelpsCount: 0, levelReachMax: 1, startTime: null, endTime: null };
+
+    // ==========================================================
+    // DME Google Sheet - DARAB / 乘法
+    // 只增加数据连线，不修改原有题目
+    // ==========================================================
+    let stageFirstTryCorrect = { 1: 0, 2: 0 };
+    let googleSheetSent = false;
+
+    const GOOGLE_SHEET_WEBAPP_URL =
+        "https://script.google.com/macros/s/AKfycbw5ryHEgJkxPnrIfw97SUT23Poj-c86vzPqDKIlROW3HhIyWUoB16PVs4uFzI4rcHWM/exec";
+
+
+    function showScreen(screenId) {
+        document.querySelectorAll('.view-screen').forEach(s => s.classList.remove('active'));
+        document.getElementById(screenId).classList.add('active');
+    }
+
+    function openTeacherDashboard() { 
+        soundAudio.playTick();
+        document.getElementById('modal-teacher').classList.add('active'); 
+    }
+    function closeTeacherDashboard() {
+        soundAudio.playTick();
+        const radios = document.getElementsByName('vs-mode');
+        radios.forEach(r => { if(r.checked) teacherConfig.visualMode = r.value; });
+        teacherConfig.voiceEnabled = document.getElementById('cfg-voice').checked;
+        document.getElementById('modal-teacher').classList.remove('active');
+    }
+
+    function updateHUD() {
+        document.getElementById('hud-coins').innerText = playerData.coins;
+        document.getElementById('hud-keys').innerText = `${playerData.keys}/2`;
+        document.getElementById('hud-crystals').innerText = `${playerData.crystals}/2`;
+    }
+
+    function startGame() {
+        soundAudio.playTick();
+        playerData.name = document.getElementById('input-name').value.trim() || "小明";
+        playerData.school = document.getElementById('input-school').value.trim() || "华小";
+        playerData.className = document.getElementById('input-class').value.trim() || "6A";
+        playerData.voice = document.getElementById('voice-gender').value;
+
+        // 新学生 / 新一轮：重新记录两个 Level 的“首次答对”
+        stageFirstTryCorrect = { 1: 0, 2: 0 };
+        googleSheetSent = false;
+
+        document.getElementById('hud-name').innerText = playerData.name;
+        document.getElementById('ai-avatar').innerText = playerData.voice === 'female' ? '👩‍🏫' : '👨‍🏫';
+
+        stats.startTime = new Date();
+        showScreen('screen-game');
+        loadStage(1);
+    }
+
+    function loadStage(stageNum) {
+        currentStage = stageNum;
+        currentQIndex = 0;
+        stageQuestions = questionBank[`stage${stageNum}`];
+        loadQuestion();
+    }
+
+    function loadQuestion() {
+        wrongAttemptsForCurrentQ = 0;
+        currentAiLevel = (teacherConfig.visualMode === 'always') ? 2 : 1;
+
+        currentQuestion = stageQuestions[currentQIndex];
+
+        document.getElementById('level-indicator').innerText = `${currentQIndex + 1}/${stageQuestions.length}`;
+        document.getElementById('q-text').innerText = `${currentQIndex + 1}. ${currentQuestion.q}`;
+
+        renderOptions(currentQuestion.opts, currentQuestion.a);
+        updateAiLevelUI();
+    }
+
+    function renderOptions(optionsArr, correctAns) {
+        const optionsGrid = document.getElementById('options-grid');
+        optionsGrid.innerHTML = '';
+        const shuffled = [...optionsArr].sort(() => Math.random() - 0.5);
+
+        shuffled.forEach((opt, i) => {
+            const btn = document.createElement('button');
+            btn.className = 'btn-opt';
+            btn.innerText = `${String.fromCharCode(65 + i)}. ${opt}`;
+            btn.onclick = () => handleAnswer(opt, correctAns);
+            optionsGrid.appendChild(btn);
+        });
+    }
+
+    function handleAnswer(selectedOpt, targetAns) {
+        stats.totalAnswered++;
+
+        if (selectedOpt === targetAns) {
+            soundAudio.playDing();
+
+            if (wrongAttemptsForCurrentQ === 0) {
+                stats.correctFirstTry++;
+                stageFirstTryCorrect[currentStage]++;
+            }
+            playerData.coins += 20;
+            updateHUD();
+
+            currentQIndex++;
+            if (currentQIndex < stageQuestions.length) {
+                loadQuestion();
+            } else {
+                finishStage();
+            }
+        } else {
+            soundAudio.playBuzz();
+            wrongAttemptsForCurrentQ++;
+            stats.aiHelpsCount++;
+
+            document.getElementById('app-container').classList.add('shake');
+            setTimeout(() => document.getElementById('app-container').classList.remove('shake'), 400);
+
+            if (teacherConfig.visualMode === 'auto') {
+                currentAiLevel = Math.min(2, wrongAttemptsForCurrentQ + 1);
+            }
+
+            if (currentAiLevel > stats.levelReachMax) stats.levelReachMax = currentAiLevel;
+            updateAiLevelUI();
+        }
+    }
+
+    function updateAiLevelUI() {
+        const badge = document.getElementById('ai-level-badge');
+        const speech = document.getElementById('ai-speech');
+        const workspace = document.getElementById('visual-workspace');
+
+        workspace.classList.remove('active');
+        workspace.innerHTML = '';
+
+        if (currentAiLevel === 1) {
+            badge.className = "ai-level-badge lvl-1";
+            badge.innerText = "🟢 Level 1：独立挑战";
+            speech.innerText = "请独立计算这道六年级乘法题目，加油！";
+            speakText(speech.innerText);
+        }
+        else if (currentAiLevel >= 2) {
+            badge.className = "ai-level-badge lvl-2";
+            badge.innerText = "🟡 Level 2：解题运算法则提示";
+            speech.innerText = "仔细看看 AI 老师给你的解题思路和运算法则哦！";
+            speakText(speech.innerText);
+
+            workspace.classList.add('active');
+            workspace.innerText = currentQuestion.hint;
+        }
+    }
+
+    function finishStage() {
+        if (currentStage === 1) {
+            playerData.keys = 2;
+            playerData.crystals = 1;
+            updateHUD();
+            showScreen('screen-chest');
+        } else {
+            playerData.crystals = 2;
+            updateHUD();
+            showReport();
+        }
+    }
+
+    function nextStage() {
+        showScreen('screen-game');
+        loadStage(2);
+    }
+
+    // ==========================================================
+    // Google Sheet 数据发送
+    // ==========================================================
+    function sendDataToGoogleSheet(durationSec) {
+        if (googleSheetSent) return;
+
+        const l1 = Number(stageFirstTryCorrect[1] || 0);
+        const l2 = Number(stageFirstTryCorrect[2] || 0);
+
+        const payload = {
+            name: playerData.name || "",
+            nama: playerData.name || "",
+            school: playerData.school || "",
+            className: playerData.className || "",
+            kelas: playerData.className || "",
+
+            operation: "Darab",
+            operasi: "Darab",
+
+            // Digital Module：只发送 Digital 数据
+            // 空白的 Pre / Post 不会覆盖 Google Sheet 已有资料
+            preL1: "",
+            preL1TP: "",
+            preL2: "",
+            preL2TP: "",
+            preTP3: "",
+
+            digitalL1: l1,
+            digitalL1TP: l1 >= 2 ? "TP3" : "Belum TP3",
+
+            digitalL2: l2,
+            digitalL2TP: l2 >= 2 ? "TP3" : "Belum TP3",
+
+            digitalTP3:
+                ((l1 >= 2 ? 1 : 0) + (l2 >= 2 ? 1 : 0)) + "/2",
+
+            aiHelp: Number(stats.aiHelpsCount || 0),
+            aiHelps: Number(stats.aiHelpsCount || 0),
+
+            digitalTime: durationSec + " 秒",
+
+            postL1: "",
+            postL1TP: "",
+            postL2: "",
+            postL2TP: "",
+            postTP3: ""
+        };
+
+        const status = document.getElementById("google-sheet-status");
+        if (status) {
+            status.innerText = "📤 正在发送成绩到 Google Sheet...";
+        }
+
+        fetch(GOOGLE_SHEET_WEBAPP_URL, {
+            method: "POST",
+            mode: "no-cors",
+            headers: {
+                "Content-Type": "text/plain;charset=UTF-8"
+            },
+            body: JSON.stringify(payload),
+            keepalive: true
+        })
+        .then(() => {
+            googleSheetSent = true;
+            if (status) {
+                status.innerText = "✅ 成绩已发送到 Google Sheet";
+            }
+        })
+        .catch((error) => {
+            console.error("Google Sheet 发送失败:", error);
+            googleSheetSent = false;
+            if (status) {
+                status.innerText = "⚠️ Google Sheet 发送失败，请检查网络";
+            }
+        });
+    }
+
+    function showReport() {
+        stats.endTime = new Date();
+        const durationSec = Math.max(1, Math.round((stats.endTime - stats.startTime) / 1000));
+
+        const l1 = Number(stageFirstTryCorrect[1] || 0);
+        const l2 = Number(stageFirstTryCorrect[2] || 0);
+        const digitalTP3Count = (l1 >= 2 ? 1 : 0) + (l2 >= 2 ? 1 : 0);
+
+        const reportHTML = `
+            <div class="report-item"><span>👤 学生姓名:</span> <strong>${playerData.name} (${playerData.className})</strong></div>
+            <div class="report-item"><span>🏫 学校名称:</span> <strong>${playerData.school}</strong></div>
+            <div class="report-item"><span>⏱ 答题用时:</span> <strong>${durationSec} 秒</strong></div>
+            <div class="report-item"><span>🟢 Digital L1 首答:</span> <strong>${l1}/5 → ${l1 >= 2 ? 'TP3' : '未达TP3'}</strong></div>
+            <div class="report-item"><span>🟡 Digital L2 首答:</span> <strong>${l2}/5 → ${l2 >= 2 ? 'TP3' : '未达TP3'}</strong></div>
+            <div class="report-item"><span>🏆 Digital TP3:</span> <strong>${digitalTP3Count}/2</strong></div>
+            <div class="report-item"><span>🤖 AI脚手架触发次数:</span> <strong>${stats.aiHelpsCount} 次</strong></div>
+            <div class="report-item"><span>📗 Google Sheet:</span> <strong id="google-sheet-status" style="color:var(--accent-green)">📤 正在发送...</strong></div>
+            <div class="report-item" style="border:none; margin-top:10px;">
+                <span style="color:var(--accent-yellow);">🌟 六年级乘法评价：</span>
+                <strong>${stats.correctFirstTry > 6 ? '六年级乘法大师！对小数乘法与百万单位乘法掌握极佳！' : '表现优秀！在 AI 智能脚手架引导下成功掌握了六年级乘法技巧！'}</strong>
+            </div>
+        `;
+
+        document.getElementById('report-content').innerHTML = reportHTML;
+        showScreen('screen-report');
+
+        // 显示报告后发送，让学生能看到发送状态
+        sendDataToGoogleSheet(durationSec);
+    }
+
+</script>
+</body>
+</html>
